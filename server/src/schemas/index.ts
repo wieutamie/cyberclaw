@@ -1,10 +1,31 @@
 import { z } from 'zod';
 
+export const SUPPORTED_LANGUAGES = [
+  'en',
+  'id',
+  'ms',
+  'es',
+  'pt',
+  'fr',
+  'de',
+  'it',
+  'nl',
+  'ru',
+  'tr',
+  'ar',
+  'hi',
+  'th',
+  'vi',
+  'zh',
+  'ja',
+  'ko',
+] as const;
+
 export const updateSettingsSchema = z.object({
-  timezone: z.string().trim().max(64).optional(),
+  timezone: z.string().trim().min(1).max(64).optional(),
   date_format: z.enum(['DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD']).optional(),
   time_format: z.enum(['12h', '24h']).optional(),
-  language: z.enum(['id', 'en']).optional(),
+  language: z.enum(SUPPORTED_LANGUAGES).optional(),
   default_tab: z.enum(['file', 'url', 'hash', 'history']).optional(),
   danger_threshold: z.number().int().min(1).max(10).optional(),
   show_upload_warning: z.boolean().optional(),

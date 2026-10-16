@@ -83,7 +83,7 @@ export interface UserSettings {
   timezone: string;
   date_format: 'DD/MM/YYYY' | 'MM/DD/YYYY' | 'YYYY-MM-DD';
   time_format: '12h' | '24h';
-  language: 'id' | 'en';
+  language: string;
   default_tab: 'file' | 'url' | 'hash' | 'history';
   danger_threshold: number;
   show_upload_warning: boolean;

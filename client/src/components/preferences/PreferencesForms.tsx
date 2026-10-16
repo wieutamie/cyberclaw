@@ -13,6 +13,10 @@ import {
 import { useSettings } from '../../context/SettingsContext.js';
 import { api } from '../../lib/api.js';
 import { Modal } from '../ui/Modal.js';
+import { getAllTimezones, groupTimezones, tzOffsetLabel } from '../../lib/timezones.js';
+import { LANGUAGES, findLanguage } from '../../lib/languages.js';
+
+const TIMEZONE_GROUPS = groupTimezones(getAllTimezones());
 
 export const GeneralPreferences: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -20,11 +24,11 @@ export const GeneralPreferences: React.FC = () => {
 
   // Date & Time
   const [timezone, setTimezone] = useState(settings.timezone || 'Asia/Jakarta');
-  const [dateFormat, setDateFormat] = useState(settings.date_format || 'DD/MM/YYYY');
-  const [timeFormat, setTimeFormat] = useState(settings.time_format || '24h');
+  const [dateFormat, setDateFormat] = useState<string>(settings.date_format || 'DD/MM/YYYY');
+  const [timeFormat, setTimeFormat] = useState<string>(settings.time_format || '24h');
 
   // Scan Preferences
-  const [defaultTab, setDefaultTab] = useState(settings.default_tab || 'file');
+  const [defaultTab, setDefaultTab] = useState<string>(settings.default_tab || 'file');
   const [threshold, setThreshold] = useState(settings.danger_threshold || 3);
   const [showWarning, setShowWarning] = useState(settings.show_upload_warning);
   const [autoOpen, setAutoOpen] = useState(settings.auto_open_report);
@@ -63,8 +67,9 @@ export const GeneralPreferences: React.FC = () => {
     showSuccessToast(t('common.saved'));
   };
 
-  const handleLanguageChange = async (lang: 'id' | 'en') => {
+  const handleLanguageChange = async (lang: string) => {
     i18n.changeLanguage(lang);
+    localStorage.setItem('cyberclaw_language', lang);
     await updateSettings({ language: lang });
     showSuccessToast(t('common.saved'));
   };
@@ -90,9 +95,13 @@ export const GeneralPreferences: React.FC = () => {
       await api.clearAllHistory();
       setShowClearModal(false);
       setDeleteConfirmText('');
-      showSuccessToast('All history has been deleted');
+      showSuccessToast(t('preferences.historyCleared'));
     }
   };
+
+  const selectClass =
+    'w-full px-3.5 py-2.5 rounded-btn bg-surface-alt border border-surface-alt text-white text-sm focus:border-brand-accent focus:outline-none';
+  const labelClass = 'text-xs font-semibold text-muted block mb-1.5';
 
   return (
     <div className="flex flex-col gap-6">
@@ -103,294 +112,417 @@ export const GeneralPreferences: React.FC = () => {
         </div>
       )}
 
-      {/* 1. Date & Time */}
-      <section className="bg-surface border border-surface-alt rounded-card p-6 shadow-card flex flex-col gap-4">
-        <div className="flex items-center gap-2.5 pb-3 border-b border-surface-alt">
-          <Clock className="w-5 h-5 text-brand-accent" />
-          <h3 className="text-base font-bold text-white">
-            {t('preferences.dateTime')}
-          </h3>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        {/* Left column — Date & Time + Language */}
+        <div className="flex flex-col gap-6">
+          <DateTimeSection
+            timezone={timezone}
+            setTimezone={setTimezone}
+            dateFormat={dateFormat}
+            setDateFormat={setDateFormat}
+            timeFormat={timeFormat}
+            setTimeFormat={setTimeFormat}
+            onSubmit={handleSaveDateTime}
+            t={t}
+            selectClass={selectClass}
+            labelClass={labelClass}
+          />
+
+          <LanguageSection
+            current={findLanguage(i18n.language)?.code || 'en'}
+            onChange={handleLanguageChange}
+            t={t}
+            selectClass={selectClass}
+            labelClass={labelClass}
+          />
         </div>
 
-        <form onSubmit={handleSaveDateTime} className="flex flex-col gap-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="text-xs font-semibold text-muted block mb-1.5">
-                Time Zone
-              </label>
-              <select
-                value={timezone}
-                onChange={(e) => setTimezone(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-btn bg-surface-alt border border-surface-alt text-white text-sm focus:border-brand-accent focus:outline-none"
-              >
-                <option value="Asia/Jakarta">Asia/Jakarta (WIB)</option>
-                <option value="Asia/Makassar">Asia/Makassar (WITA)</option>
-                <option value="Asia/Jayapura">Asia/Jayapura (WIT)</option>
-                <option value="UTC">UTC (Universal Time)</option>
-                <option value="America/New_York">America/New_York (EST)</option>
-                <option value="Europe/London">Europe/London (GMT)</option>
-              </select>
-            </div>
+        {/* Right column — Scan Preferences + History Retention */}
+        <div className="flex flex-col gap-6">
+          <ScanSection
+            defaultTab={defaultTab}
+            setDefaultTab={setDefaultTab}
+            threshold={threshold}
+            setThreshold={setThreshold}
+            showWarning={showWarning}
+            setShowWarning={setShowWarning}
+            autoOpen={autoOpen}
+            setAutoOpen={setAutoOpen}
+            onSubmit={handleSaveScanPrefs}
+            t={t}
+            selectClass={selectClass}
+            labelClass={labelClass}
+          />
 
-            <div>
-              <label className="text-xs font-semibold text-muted block mb-1.5">
-                Date Format
-              </label>
-              <select
-                value={dateFormat}
-                onChange={(e) => setDateFormat(e.target.value as any)}
-                className="w-full px-3.5 py-2.5 rounded-btn bg-surface-alt border border-surface-alt text-white text-sm focus:border-brand-accent focus:outline-none"
-              >
-                <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-                <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-                <option value="YYYY-MM-DD">YYYY-MM-DD</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-muted block mb-1.5">
-                Time Format
-              </label>
-              <select
-                value={timeFormat}
-                onChange={(e) => setTimeFormat(e.target.value as any)}
-                className="w-full px-3.5 py-2.5 rounded-btn bg-surface-alt border border-surface-alt text-white text-sm focus:border-brand-accent focus:outline-none"
-              >
-                <option value="24h">24 Jam (14:30)</option>
-                <option value="12h">12 Jam AM/PM (02:30 PM)</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              className="px-5 py-2 rounded-btn bg-brand hover:bg-brand-accent text-white font-bold text-xs shadow-soft transition-all"
-            >
-              {t('common.save')}
-            </button>
-          </div>
-        </form>
-      </section>
-
-      {/* 3. Scan Preferences */}
-      <section className="bg-surface border border-surface-alt rounded-card p-6 shadow-card flex flex-col gap-4">
-        <div className="flex items-center gap-2.5 pb-3 border-b border-surface-alt">
-          <Sliders className="w-5 h-5 text-brand-accent" />
-          <h3 className="text-base font-bold text-white">
-            {t('preferences.scanPreferences')}
-          </h3>
+          <HistorySection
+            retentionDays={retentionDays}
+            onRetentionChange={async (val) => {
+              setRetentionDays(val);
+              await updateSettings({ history_retention_days: val });
+              showSuccessToast(t('common.saved'));
+            }}
+            onExport={handleExportCsv}
+            onClear={() => setShowClearModal(true)}
+            t={t}
+            selectClass={selectClass}
+            labelClass={labelClass}
+          />
         </div>
+      </div>
 
-        <form onSubmit={handleSaveScanPrefs} className="flex flex-col gap-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-semibold text-muted block mb-1.5">
-                Tab Default Dashboard
-              </label>
-              <select
-                value={defaultTab}
-                onChange={(e) => setDefaultTab(e.target.value as any)}
-                className="w-full px-3.5 py-2.5 rounded-btn bg-surface-alt border border-surface-alt text-white text-sm focus:border-brand-accent focus:outline-none"
-              >
-                <option value="file">Scan File</option>
-                <option value="url">Scan URL</option>
-                <option value="hash">Scan Hash</option>
-                <option value="history">History</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-muted block mb-1.5">
-                {t('preferences.dangerThreshold')}
-              </label>
-              <input
-                type="number"
-                min={1}
-                max={10}
-                value={threshold}
-                onChange={(e) => setThreshold(Number(e.target.value))}
-                className="w-full px-3.5 py-2.5 rounded-btn bg-surface-alt border border-surface-alt text-white text-sm focus:border-brand-accent focus:outline-none"
-              />
-              <span className="text-[11px] text-muted mt-1 block">
-                {t('preferences.dangerThresholdHelp')}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3 pt-2">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={showWarning}
-                onChange={(e) => setShowWarning(e.target.checked)}
-                className="w-4 h-4 rounded border-surface-alt bg-surface-alt text-brand focus:ring-brand-accent"
-              />
-              <span className="text-sm text-gray-200">
-                {t('preferences.showWarningToggle')}
-              </span>
-            </label>
-
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={autoOpen}
-                onChange={(e) => setAutoOpen(e.target.checked)}
-                className="w-4 h-4 rounded border-surface-alt bg-surface-alt text-brand focus:ring-brand-accent"
-              />
-              <span className="text-sm text-gray-200">
-                {t('preferences.autoOpenReport')}
-              </span>
-            </label>
-          </div>
-
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              className="px-5 py-2 rounded-btn bg-brand hover:bg-brand-accent text-white font-bold text-xs shadow-soft transition-all"
-            >
-              {t('common.save')}
-            </button>
-          </div>
-        </form>
-      </section>
-
-      {/* 4. Language */}
-      <section className="bg-surface border border-surface-alt rounded-card p-6 shadow-card flex flex-col gap-4">
-        <div className="flex items-center gap-2.5 pb-3 border-b border-surface-alt">
-          <Globe className="w-5 h-5 text-brand-accent" />
-          <h3 className="text-base font-bold text-white">
-            {t('preferences.language')}
-          </h3>
-        </div>
-
-        <div className="flex gap-4">
-          <button
-            onClick={() => handleLanguageChange('id')}
-            className={`flex-1 py-2.5 px-4 rounded-btn border text-sm font-semibold transition-all ${
-              i18n.language === 'id'
-                ? 'border-brand bg-brand/20 text-white shadow-soft'
-                : 'border-surface-alt bg-surface-alt text-gray-300 hover:bg-surface-alt/80'
-            }`}
-          >
-            🇮🇩 Bahasa Indonesia
-          </button>
-          <button
-            onClick={() => handleLanguageChange('en')}
-            className={`flex-1 py-2.5 px-4 rounded-btn border text-sm font-semibold transition-all ${
-              i18n.language === 'en'
-                ? 'border-brand bg-brand/20 text-white shadow-soft'
-                : 'border-surface-alt bg-surface-alt text-gray-300 hover:bg-surface-alt/80'
-            }`}
-          >
-            🇬🇧 English (Default)
-          </button>
-        </div>
-      </section>
-
-      {/* 5. Scan History Management */}
-      <section className="bg-surface border border-surface-alt rounded-card p-6 shadow-card flex flex-col gap-4">
-        <div className="flex items-center gap-2.5 pb-3 border-b border-surface-alt">
-          <Database className="w-5 h-5 text-brand-accent" />
-          <h3 className="text-base font-bold text-white">
-            {t('preferences.historyRetention')}
-          </h3>
-        </div>
-
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="w-full sm:w-1/2">
-            <label className="text-xs font-semibold text-muted block mb-1.5">
-              History Retention Period
-            </label>
-            <select
-              value={retentionDays === null ? 'null' : String(retentionDays)}
-              onChange={async (e) => {
-                const val = e.target.value === 'null' ? null : Number(e.target.value);
-                setRetentionDays(val);
-                await updateSettings({ history_retention_days: val });
-                showSuccessToast(t('common.saved'));
-              }}
-              className="w-full px-3.5 py-2.5 rounded-btn bg-surface-alt border border-surface-alt text-white text-sm focus:border-brand-accent focus:outline-none"
-            >
-              <option value="30">30 Days</option>
-              <option value="90">90 Days (Default)</option>
-              <option value="365">1 Year</option>
-              <option value="null">Forever (never deleted)</option>
-            </select>
-          </div>
-
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-end pt-4 sm:pt-0">
-            <button
-              onClick={handleExportCsv}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-btn bg-surface-alt border border-brand-accent text-white text-xs font-semibold hover:bg-brand-accent transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              <span>{t('preferences.exportCsv')}</span>
-            </button>
-
-            <button
-              onClick={() => setShowClearModal(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-btn bg-status-danger/20 border border-status-danger/40 text-status-danger text-xs font-semibold hover:bg-status-danger hover:text-white transition-colors"
-            >
-              <Trash2 className="w-4 h-4" />
-              <span>{t('preferences.clearHistory')}</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* Confirmation Modal for Clear History */}
-      <Modal
+      <ClearHistoryModal
         isOpen={showClearModal}
         onClose={() => {
           setShowClearModal(false);
           setDeleteConfirmText('');
         }}
-        labelledBy="clear-history-title"
-        panelClassName="max-w-md border-status-danger"
-      >
-        <div className="flex items-center gap-3 text-status-danger">
-          <AlertTriangle className="w-6 h-6 shrink-0" />
-          <h3 id="clear-history-title" className="text-lg font-bold">
-            {t('preferences.clearHistory')}
-          </h3>
-        </div>
-
-        <p className="text-sm text-gray-300">
-          This action is permanent and will delete all scan data stored in your account.
-        </p>
-
-        <p className="text-xs text-muted font-medium">
-          {t('preferences.clearHistoryConfirm')}:
-        </p>
-
-        <input
-          type="text"
-          value={deleteConfirmText}
-          onChange={(e) => setDeleteConfirmText(e.target.value)}
-          placeholder="DELETE"
-          className="px-3.5 py-2.5 rounded-btn bg-surface-alt border border-status-danger font-mono text-center text-sm font-bold text-white focus:outline-none"
-        />
-
-        <div className="flex justify-end gap-3 mt-2">
-          <button
-            onClick={() => {
-              setShowClearModal(false);
-              setDeleteConfirmText('');
-            }}
-            className="px-4 py-2 rounded-btn bg-surface-alt text-white text-xs font-medium"
-          >
-            {t('common.cancel')}
-          </button>
-          <button
-            disabled={deleteConfirmText !== 'DELETE'}
-            onClick={handleClearHistory}
-            className="px-4 py-2 rounded-btn bg-status-danger text-white text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-status-danger/80"
-          >
-            Delete Permanently
-          </button>
-        </div>
-      </Modal>
+        confirmText={deleteConfirmText}
+        setConfirmText={setDeleteConfirmText}
+        onConfirm={handleClearHistory}
+        t={t}
+      />
     </div>
   );
 };
+
+
+interface CommonProps {
+  t: (key: string) => string;
+  selectClass: string;
+  labelClass: string;
+}
+
+interface DateTimeSectionProps extends CommonProps {
+  timezone: string;
+  setTimezone: (v: string) => void;
+  dateFormat: string;
+  setDateFormat: (v: string) => void;
+  timeFormat: string;
+  setTimeFormat: (v: string) => void;
+  onSubmit: (e: React.FormEvent) => void;
+}
+
+const DateTimeSection: React.FC<DateTimeSectionProps> = ({
+  timezone,
+  setTimezone,
+  dateFormat,
+  setDateFormat,
+  timeFormat,
+  setTimeFormat,
+  onSubmit,
+  t,
+  selectClass,
+  labelClass,
+}) => (
+  <section className="bg-surface border border-surface-alt rounded-card p-6 shadow-card flex flex-col gap-4">
+    <div className="flex items-center gap-2.5 pb-3 border-b border-surface-alt">
+      <Clock className="w-5 h-5 text-brand-accent" />
+      <h3 className="text-base font-bold text-white">{t('preferences.dateTime')}</h3>
+    </div>
+
+    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+      <div>
+        <label className={labelClass}>{t('preferences.timezone')}</label>
+        <select value={timezone} onChange={(e) => setTimezone(e.target.value)} className={selectClass}>
+          {TIMEZONE_GROUPS.map((group) => (
+            <optgroup key={group.region} label={group.region}>
+              {group.zones.map((zone) => {
+                const offset = tzOffsetLabel(zone);
+                return (
+                  <option key={zone} value={zone}>
+                    {zone.replace(/_/g, ' ')}
+                    {offset ? ` (${offset})` : ''}
+                  </option>
+                );
+              })}
+            </optgroup>
+          ))}
+        </select>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className={labelClass}>{t('preferences.dateFormat')}</label>
+          <select
+            value={dateFormat}
+            onChange={(e) => setDateFormat(e.target.value)}
+            className={selectClass}
+          >
+            <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+            <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+            <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+          </select>
+        </div>
+
+        <div>
+          <label className={labelClass}>{t('preferences.timeFormat')}</label>
+          <select
+            value={timeFormat}
+            onChange={(e) => setTimeFormat(e.target.value)}
+            className={selectClass}
+          >
+            <option value="24h">{t('preferences.timeFormat24')}</option>
+            <option value="12h">{t('preferences.timeFormat12')}</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <button
+          type="submit"
+          className="px-5 py-2 rounded-btn bg-brand hover:bg-brand-accent text-white font-bold text-xs shadow-soft transition-all"
+        >
+          {t('common.save')}
+        </button>
+      </div>
+    </form>
+  </section>
+);
+
+interface LanguageSectionProps extends CommonProps {
+  current: string;
+  onChange: (lang: string) => void;
+}
+
+const LanguageSection: React.FC<LanguageSectionProps> = ({
+  current,
+  onChange,
+  t,
+  selectClass,
+  labelClass,
+}) => (
+  <section className="bg-surface border border-surface-alt rounded-card p-6 shadow-card flex flex-col gap-4">
+    <div className="flex items-center gap-2.5 pb-3 border-b border-surface-alt">
+      <Globe className="w-5 h-5 text-brand-accent" />
+      <h3 className="text-base font-bold text-white">{t('preferences.language')}</h3>
+    </div>
+
+    <div>
+      <label className={labelClass}>{t('preferences.displayLanguage')}</label>
+      <select value={current} onChange={(e) => onChange(e.target.value)} className={selectClass}>
+        {LANGUAGES.map((lang) => (
+          <option key={lang.code} value={lang.code}>
+            {lang.flag} {lang.label}
+            {lang.code === 'en' ? ` — ${t('preferences.defaultLabel')}` : ''}
+          </option>
+        ))}
+      </select>
+      <span className="text-[11px] text-muted mt-1 block">{t('preferences.languageHelp')}</span>
+    </div>
+  </section>
+);
+
+
+interface ScanSectionProps extends CommonProps {
+  defaultTab: string;
+  setDefaultTab: (v: string) => void;
+  threshold: number;
+  setThreshold: (v: number) => void;
+  showWarning: boolean;
+  setShowWarning: (v: boolean) => void;
+  autoOpen: boolean;
+  setAutoOpen: (v: boolean) => void;
+  onSubmit: (e: React.FormEvent) => void;
+}
+
+const ScanSection: React.FC<ScanSectionProps> = ({
+  defaultTab,
+  setDefaultTab,
+  threshold,
+  setThreshold,
+  showWarning,
+  setShowWarning,
+  autoOpen,
+  setAutoOpen,
+  onSubmit,
+  t,
+  selectClass,
+  labelClass,
+}) => (
+  <section className="bg-surface border border-surface-alt rounded-card p-6 shadow-card flex flex-col gap-4">
+    <div className="flex items-center gap-2.5 pb-3 border-b border-surface-alt">
+      <Sliders className="w-5 h-5 text-brand-accent" />
+      <h3 className="text-base font-bold text-white">{t('preferences.scanPreferences')}</h3>
+    </div>
+
+    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+      <div>
+        <label className={labelClass}>{t('preferences.defaultTab')}</label>
+        <select
+          value={defaultTab}
+          onChange={(e) => setDefaultTab(e.target.value)}
+          className={selectClass}
+        >
+          <option value="file">{t('preferences.tabFile')}</option>
+          <option value="url">{t('preferences.tabUrl')}</option>
+          <option value="hash">{t('preferences.tabHash')}</option>
+          <option value="history">{t('preferences.tabHistory')}</option>
+        </select>
+      </div>
+
+      <div>
+        <label className={labelClass}>{t('preferences.dangerThreshold')}</label>
+        <input
+          type="number"
+          min={1}
+          max={10}
+          value={threshold}
+          onChange={(e) => setThreshold(Number(e.target.value))}
+          className={selectClass}
+        />
+        <span className="text-[11px] text-muted mt-1 block">
+          {t('preferences.dangerThresholdHelp')}
+        </span>
+      </div>
+
+      <div className="flex flex-col gap-3 pt-1">
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showWarning}
+            onChange={(e) => setShowWarning(e.target.checked)}
+            className="w-4 h-4 rounded border-surface-alt bg-surface-alt text-brand focus:ring-brand-accent"
+          />
+          <span className="text-sm text-gray-200">{t('preferences.showWarningToggle')}</span>
+        </label>
+
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={autoOpen}
+            onChange={(e) => setAutoOpen(e.target.checked)}
+            className="w-4 h-4 rounded border-surface-alt bg-surface-alt text-brand focus:ring-brand-accent"
+          />
+          <span className="text-sm text-gray-200">{t('preferences.autoOpenReport')}</span>
+        </label>
+      </div>
+
+      <div className="flex justify-end">
+        <button
+          type="submit"
+          className="px-5 py-2 rounded-btn bg-brand hover:bg-brand-accent text-white font-bold text-xs shadow-soft transition-all"
+        >
+          {t('common.save')}
+        </button>
+      </div>
+    </form>
+  </section>
+);
+
+
+interface HistorySectionProps extends CommonProps {
+  retentionDays: number | null;
+  onRetentionChange: (val: number | null) => void;
+  onExport: () => void;
+  onClear: () => void;
+}
+
+const HistorySection: React.FC<HistorySectionProps> = ({
+  retentionDays,
+  onRetentionChange,
+  onExport,
+  onClear,
+  t,
+  selectClass,
+  labelClass,
+}) => (
+  <section className="bg-surface border border-surface-alt rounded-card p-6 shadow-card flex flex-col gap-4">
+    <div className="flex items-center gap-2.5 pb-3 border-b border-surface-alt">
+      <Database className="w-5 h-5 text-brand-accent" />
+      <h3 className="text-base font-bold text-white">{t('preferences.historyRetention')}</h3>
+    </div>
+
+    <div>
+      <label className={labelClass}>{t('preferences.retentionPeriod')}</label>
+      <select
+        value={retentionDays === null ? 'null' : String(retentionDays)}
+        onChange={(e) => onRetentionChange(e.target.value === 'null' ? null : Number(e.target.value))}
+        className={selectClass}
+      >
+        <option value="30">{t('preferences.retention30')}</option>
+        <option value="90">{t('preferences.retention90')}</option>
+        <option value="365">{t('preferences.retention365')}</option>
+        <option value="null">{t('preferences.retentionForever')}</option>
+      </select>
+    </div>
+
+    <div className="flex items-center gap-3 flex-wrap pt-2">
+      <button
+        onClick={onExport}
+        className="flex items-center gap-2 px-4 py-2.5 rounded-btn bg-surface-alt border border-brand-accent text-white text-xs font-semibold hover:bg-brand-accent transition-colors"
+      >
+        <Download className="w-4 h-4" />
+        <span>{t('preferences.exportCsv')}</span>
+      </button>
+
+      <button
+        onClick={onClear}
+        className="flex items-center gap-2 px-4 py-2.5 rounded-btn bg-status-danger/20 border border-status-danger/40 text-status-danger text-xs font-semibold hover:bg-status-danger hover:text-white transition-colors"
+      >
+        <Trash2 className="w-4 h-4" />
+        <span>{t('preferences.clearHistory')}</span>
+      </button>
+    </div>
+  </section>
+);
+
+interface ClearHistoryModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  confirmText: string;
+  setConfirmText: (v: string) => void;
+  onConfirm: () => void;
+  t: (key: string) => string;
+}
+
+const ClearHistoryModal: React.FC<ClearHistoryModalProps> = ({
+  isOpen,
+  onClose,
+  confirmText,
+  setConfirmText,
+  onConfirm,
+  t,
+}) => (
+  <Modal
+    isOpen={isOpen}
+    onClose={onClose}
+    labelledBy="clear-history-title"
+    panelClassName="max-w-md border-status-danger"
+  >
+    <div className="flex items-center gap-3 text-status-danger">
+      <AlertTriangle className="w-6 h-6 shrink-0" />
+      <h3 id="clear-history-title" className="text-lg font-bold">
+        {t('preferences.clearHistory')}
+      </h3>
+    </div>
+
+    <p className="text-sm text-gray-300">{t('preferences.clearHistoryWarning')}</p>
+
+    <p className="text-xs text-muted font-medium">{t('preferences.clearHistoryConfirm')}:</p>
+
+    <input
+      type="text"
+      value={confirmText}
+      onChange={(e) => setConfirmText(e.target.value)}
+      placeholder="DELETE"
+      className="px-3.5 py-2.5 rounded-btn bg-surface-alt border border-status-danger font-mono text-center text-sm font-bold text-white focus:outline-none"
+    />
+
+    <div className="flex justify-end gap-3 mt-2">
+      <button
+        onClick={onClose}
+        className="px-4 py-2 rounded-btn bg-surface-alt text-white text-xs font-medium"
+      >
+        {t('common.cancel')}
+      </button>
+      <button
+        disabled={confirmText !== 'DELETE'}
+        onClick={onConfirm}
+        className="px-4 py-2 rounded-btn bg-status-danger text-white text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-status-danger/80"
+      >
+        {t('preferences.deletePermanently')}
+      </button>
+    </div>
+  </Modal>
+);
+

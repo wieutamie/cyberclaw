@@ -12,7 +12,7 @@ export const PreferencesPage: React.FC = () => {
           {t('preferences.title')}
         </h1>
         <p className="text-xs text-muted mt-1">
-          Kelola format tampilan tanggal, zona waktu, preferensi scan, dan riwayat pemindaian Anda.
+          {t('preferences.subtitle')}
         </p>
       </div>
 

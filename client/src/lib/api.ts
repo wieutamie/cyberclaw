@@ -385,7 +385,7 @@ export const api = {
           timezone: 'Asia/Jakarta',
           date_format: 'DD/MM/YYYY',
           time_format: '24h',
-          language: 'id',
+          language: 'en',
           default_tab: 'file',
           danger_threshold: 3,
           show_upload_warning: true,

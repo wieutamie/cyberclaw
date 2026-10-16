@@ -10,7 +10,7 @@
 | Arsitektur | SPA `client/` (React + Vite + TypeScript) + REST API `server/` (Node.js + Express + TypeScript) |
 | Deployment | Frontend: Vercel · Backend: Railway / Render |
 | Status | Siap dikembangkan |
-| Bahasa UI | Indonesia (default) dan Inggris |
+| Bahasa UI | Inggris (default), Indonesia, +16 bahasa lain (fallback ke Inggris) |
 
 > **Catatan untuk pengembang / AI agent:** Dokumen ini adalah *single source of truth*. Jika ada hal yang tidak tertulis, ambil keputusan paling sederhana yang konsisten dengan dokumen ini, lalu catat asumsinya di `DECISIONS.md`. Jangan menambah fitur di luar bagian **Scope**.
 
@@ -64,7 +64,7 @@ Pengguna awam dan mahasiswa/IT junior sering kesulitan membaca hasil mentah Viru
 4. Analytics (donat, garis, Recent Activity Log).
 5. Preferences: General (pengaturan akun & aplikasi).
 6. Hamburger menu navigasi (Dashboard, Analytics, Preferences, Help, About).
-7. Dukungan 2 bahasa (ID/EN) dan 2 zona waktu/format tanggal sesuai preferensi.
+7. Dukungan multi-bahasa (English default + 17 bahasa lain, fallback ke English) dan dropdown zona waktu IANA lengkap beserta format tanggal/waktu sesuai preferensi.
 
 ## 1.5 Out of Scope (MVP)
 - Aplikasi mobile native, ekstensi browser, API publik Cyber Claw.
@@ -360,18 +360,20 @@ Data hanya milik pengguna yang login. Filter rentang waktu global: **7 hari / 30
 Halaman Preferences kini hanya memiliki satu tab: **General** (tab "API Keys" dihapus — lihat catatan di 3.5.2).
 
 ### 3.5.1 General
-Disusun sebagai section bertumpuk dalam kartu `#602F4B`, tiap section punya tombol *Save* sendiri (kecuali dinyatakan lain).
+Disusun sebagai **dua kolom** (responsif: menumpuk di layar kecil) di dalam halaman `#17183B`. Setiap section berupa kartu `#602F4B` dengan tombol *Save* sendiri (kecuali dinyatakan lain).
+
+- **Kolom kiri:** Date & Time, lalu Language.
+- **Kolom kanan:** Scan Preferences, lalu History Retention.
 
 | Section | Kontrol | Perilaku |
 |---|---|---|
-| **User Settings** | Nama Lengkap, Username (cek unik), Avatar inisial (otomatis) | Validasi sama dengan Sign Up; toast sukses |
-| **Update Email** | Email baru + password saat ini | Kirim email konfirmasi ke alamat baru; email lama berlaku sampai dikonfirmasi. Disembunyikan untuk akun OAuth-only |
-| **Update Password** | Password saat ini, password baru, konfirmasi | Aturan password sama; sesi lain di-logout. Disembunyikan untuk akun OAuth-only |
-| **Date & Time** | Time zone (dropdown IANA, default deteksi browser), format tanggal (`DD/MM/YYYY`, `MM/DD/YYYY`, `YYYY-MM-DD`), format jam (12/24) | Berlaku global untuk semua timestamp |
+| **Date & Time** | (a) Time Zone: dropdown **lengkap** dari `Intl.supportedValuesOf('timeZone')` (fallback daftar kurasi), dikelompokkan per region dan menampilkan label offset (mis. `Asia/Jakarta (GMT+7)`); (b) format tanggal (`DD/MM/YYYY`, `MM/DD/YYYY`, `YYYY-MM-DD`); (c) format jam (12/24) | Berlaku global untuk semua timestamp. Default timezone = `Asia/Jakarta` |
+| **Language** | Dropdown **18 bahasa** (English default, Indonesian, Malay, Spanish, Portuguese, French, German, Italian, Dutch, Russian, Turkish, Arabic, Hindi, Thai, Vietnamese, Chinese, Japanese, Korean) | Perubahan langsung diterapkan tanpa reload penuh; disimpan di `user_settings.language` **dan** `localStorage`. Bahasa tanpa berkas terjemahan otomatis fallback ke English per-key |
 | **Scan Preferences** | (a) Tab default dashboard, (b) Threshold Danger T (1–10, default 3), (c) Tampilkan dialog privasi sebelum upload (toggle, default ON), (d) Otomatis buka Full Report setelah scan (toggle, default OFF) | Disimpan di `user_settings` |
-| **Language** | Dropdown: Bahasa Indonesia / English | Perubahan langsung diterapkan tanpa reload penuh |
-| **Scan History** | (a) Retensi riwayat: 30 hari / 90 hari / 1 tahun / Selamanya (default 90 hari), (b) tombol **Export CSV**, (c) tombol **Clear All History** (danger, konfirmasi dengan mengetik `DELETE`) | Job pembersihan harian menghapus data melewati retensi |
+| **History Retention** | (a) Retensi riwayat: 30 hari / 90 hari / 1 tahun / Selamanya (default 90 hari), (b) tombol **Export CSV**, (c) tombol **Clear All History** (danger, konfirmasi dengan mengetik `DELETE`) | Job pembersihan harian menghapus data melewati retensi |
 | **Danger Zone (S)** | Delete Account (konfirmasi password/ketik username) | Menghapus semua data pengguna |
+
+> **i18n:** English adalah bahasa default aplikasi. Semua string UI diambil dari `client/src/i18n/locales/*.json`; tidak ada teks Indonesia yang di-hardcode di komponen. Daftar bahasa didefinisikan di `client/src/lib/languages.ts`.
 
 ### 3.5.2 API Keys (Dihapus — v1.2)
 > **Catatan:** permukaan API Key per pengguna **dihapus** dari UI client pada v1.2. Pengguna tidak lagi memasukkan, menguji, atau menghapus API Key pribadi. Backend tetap menyelesaikan kunci pemindaian melalui `SYSTEM_VT_API_KEY` (fallback), sehingga pemindaian tetap berjalan. Endpoint backend `/api/settings/api-key*` dan `ApiKeyService` **tetap ada** untuk mendukung resolusi kunci, tetapi tidak lagi diekspos di antarmuka.
@@ -610,7 +612,7 @@ create table user_settings (
   timezone text not null default 'Asia/Jakarta',
   date_format text not null default 'DD/MM/YYYY' check (date_format in ('DD/MM/YYYY','MM/DD/YYYY','YYYY-MM-DD')),
   time_format text not null default '24h' check (time_format in ('12h','24h')),
-  language text not null default 'id' check (language in ('id','en')),
+  language text not null default 'en' check (language ~ '^[a-z]{2}$'),
   default_tab text not null default 'file' check (default_tab in ('file','url','hash','history')),
   danger_threshold int not null default 3 check (danger_threshold between 1 and 10),
   show_upload_warning boolean not null default true,
@@ -1048,7 +1050,7 @@ Fitur dianggap selesai bila: memenuhi FR terkait, lolos AC terkait, lint & typec
 ## 10.2 Asumsi
 1. Admin menyediakan `SYSTEM_VT_API_KEY` (sejak v1.2 ini jalur utama; API Key per pengguna tidak lagi diekspos di UI).
 2. Pengguna menerima bahwa file/URL dikirim ke VirusTotal.
-3. Bahasa awal UI adalah Indonesia; teks Inggris tersedia untuk semua string.
+3. Bahasa awal UI adalah Inggris; 17 bahasa lain tersedia dan fallback ke Inggris bila belum diterjemahkan.
 4. Aplikasi digunakan untuk tujuan edukasi/non-komersial.
 
 ## 10.3 Glosarium

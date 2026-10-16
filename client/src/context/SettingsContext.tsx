@@ -14,7 +14,7 @@ const defaultSettings: UserSettings = {
   timezone: 'Asia/Jakarta',
   date_format: 'DD/MM/YYYY',
   time_format: '24h',
-  language: 'id',
+  language: 'en',
   default_tab: 'file',
   danger_threshold: 3,
   show_upload_warning: true,
@@ -35,9 +35,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       try {
         const data = await api.getSettings();
         setSettings(data);
-        if (data.language && data.language !== i18n.language) {
-          i18n.changeLanguage(data.language);
-          localStorage.setItem('cyberclaw_language', data.language);
+        const lang = data.language ? data.language.toLowerCase().split('-')[0] : undefined;
+        if (lang && lang !== i18n.language) {
+          i18n.changeLanguage(lang);
+          localStorage.setItem('cyberclaw_language', lang);
         }
       } catch (err) {
         console.error('Failed to load settings:', err);
@@ -53,9 +54,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     try {
       const updated = await api.updateSettings(updates);
       setSettings(updated);
-      if (updates.language && updates.language !== i18n.language) {
-        i18n.changeLanguage(updates.language);
-        localStorage.setItem('cyberclaw_language', updates.language);
+      const lang = updates.language ? updates.language.toLowerCase().split('-')[0] : undefined;
+      if (lang && lang !== i18n.language) {
+        i18n.changeLanguage(lang);
+        localStorage.setItem('cyberclaw_language', lang);
       }
     } catch (err) {
       console.error('Failed to update settings:', err);
