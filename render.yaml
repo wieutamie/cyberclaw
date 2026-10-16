@@ -16,11 +16,13 @@ services:
         value: production
       - key: JWT_SECRET
         generateValue: true
-      - key: ENCRYPTION_KEY
-        sync: false
+      # --- Non-secret values, safe to keep in the repo ---
       - key: CLIENT_URL
-        sync: false
+        value: https://cyberclaw-cyberclaw.vercel.app
       - key: SUPABASE_URL
+        value: https://cdxitkfjspfhcjgojbaz.supabase.co
+      # --- Secrets: fill these in the Render dashboard (sync: false) ---
+      - key: ENCRYPTION_KEY
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
