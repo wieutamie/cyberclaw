@@ -29,3 +29,6 @@ Thumbs.db
 # Vite / TS caches
 .vite/
 *.tsbuildinfo
+
+# Vercel
+.vercel/

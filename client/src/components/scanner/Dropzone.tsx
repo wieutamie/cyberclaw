@@ -32,7 +32,7 @@ export const Dropzone: React.FC<DropzoneProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const autoOpenFired = useRef(false);
-  const MAX_BYTES = 32 * 1024 * 1024; // 32 MB
+  const MAX_BYTES = 4 * 1024 * 1024; // 4 MB (backend runs on Vercel: 4.5 MB request cap)
 
   // Auto-open the native OS file picker when requested (e.g. arriving from the
   // "Scan Another" button on the result page).
@@ -56,7 +56,7 @@ export const Dropzone: React.FC<DropzoneProps> = ({
       return;
     }
     if (file.size > MAX_BYTES) {
-      setError(`File size exceeds the 32 MB limit (${formatBytes(file.size)}).`);
+      setError(`File size exceeds the 4 MB limit (${formatBytes(file.size)}).`);
       setSelectedFile(null);
       return;
     }

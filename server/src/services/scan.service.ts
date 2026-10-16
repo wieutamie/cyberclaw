@@ -125,20 +125,21 @@ export class ScanService {
 
     try {
       if (apiKey === 'demo_key' || apiKey.startsWith('demo_')) {
-        // Mock demo immediate / queued
-        setTimeout(async () => {
-          const { stats, vendor_results } = this.generateMockResults(filename, isEicar);
-          const settings = await SettingsService.getSettings(userId);
-          const verdict = calculateVerdict(stats, settings.danger_threshold);
-          await this.updateScan(scanId, {
-            state: 'completed',
-            verdict,
-            stats,
-            vendor_results,
-            completed_at: new Date().toISOString(),
-          });
-        }, 3000);
-        return initialRecord;
+        // Mock demo: resolve SYNCHRONOUSLY. A `setTimeout` here would never fire
+        // on a serverless platform (the function is frozen once the response is
+        // sent), leaving the scan stuck on "queued" forever.
+        const { stats, vendor_results } = this.generateMockResults(filename, isEicar);
+        const settings = await SettingsService.getSettings(userId);
+        const verdict = calculateVerdict(stats, settings.danger_threshold);
+        const completed = {
+          state: 'completed' as const,
+          verdict,
+          stats,
+          vendor_results,
+          completed_at: new Date().toISOString(),
+        };
+        await this.updateScan(scanId, completed);
+        return { ...initialRecord, ...completed };
       }
 
       const res = await vtClient.uploadFile(apiKey, fileBuffer, filename);
@@ -150,19 +151,20 @@ export class ScanService {
       });
     } catch (err: any) {
       logger.warn({ err }, 'File upload to VT failed or running in fallback demo mode');
-      // If demo or upstream error, generate graceful fallback response for demo test
+      // If demo or upstream error, generate a graceful fallback synchronously
+      // (setTimeout would never fire on serverless — see createFileScan note).
       const { stats, vendor_results } = this.generateMockResults(filename, isEicar);
       const settings = await SettingsService.getSettings(userId);
       const verdict = calculateVerdict(stats, settings.danger_threshold);
-      setTimeout(async () => {
-        await this.updateScan(scanId, {
-          state: 'completed',
-          verdict,
-          stats,
-          vendor_results,
-          completed_at: new Date().toISOString(),
-        });
-      }, 2000);
+      const completed = {
+        state: 'completed' as const,
+        verdict,
+        stats,
+        vendor_results,
+        completed_at: new Date().toISOString(),
+      };
+      await this.updateScan(scanId, completed);
+      return { ...initialRecord, ...completed };
     }
 
     return initialRecord;
@@ -189,19 +191,19 @@ export class ScanService {
 
     try {
       if (apiKey.startsWith('demo_')) {
-        setTimeout(async () => {
-          const { stats, vendor_results } = this.generateMockResults(url, isTestMalicious);
-          const settings = await SettingsService.getSettings(userId);
-          const verdict = calculateVerdict(stats, settings.danger_threshold);
-          await this.updateScan(scanId, {
-            state: 'completed',
-            verdict,
-            stats,
-            vendor_results,
-            completed_at: new Date().toISOString(),
-          });
-        }, 3000);
-        return initialRecord;
+        // Resolve synchronously (see createFileScan note re: serverless).
+        const { stats, vendor_results } = this.generateMockResults(url, isTestMalicious);
+        const settings = await SettingsService.getSettings(userId);
+        const verdict = calculateVerdict(stats, settings.danger_threshold);
+        const completed = {
+          state: 'completed' as const,
+          verdict,
+          stats,
+          vendor_results,
+          completed_at: new Date().toISOString(),
+        };
+        await this.updateScan(scanId, completed);
+        return { ...initialRecord, ...completed };
       }
 
       const res = await vtClient.submitUrl(apiKey, url);
@@ -216,15 +218,15 @@ export class ScanService {
       const { stats, vendor_results } = this.generateMockResults(url, isTestMalicious);
       const settings = await SettingsService.getSettings(userId);
       const verdict = calculateVerdict(stats, settings.danger_threshold);
-      setTimeout(async () => {
-        await this.updateScan(scanId, {
-          state: 'completed',
-          verdict,
-          stats,
-          vendor_results,
-          completed_at: new Date().toISOString(),
-        });
-      }, 2000);
+      const completed = {
+        state: 'completed' as const,
+        verdict,
+        stats,
+        vendor_results,
+        completed_at: new Date().toISOString(),
+      };
+      await this.updateScan(scanId, completed);
+      return { ...initialRecord, ...completed };
     }
 
     return initialRecord;

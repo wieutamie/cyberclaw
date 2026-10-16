@@ -22,6 +22,9 @@ const envSchema = z.object({
   JWT_SECRET: z.string().optional().default(''),
 
   SYSTEM_VT_API_KEY: z.string().optional().default(''),
+  // Shared secret guarding the serverless retention-cron endpoint
+  // (`GET /api/internal/retention`). Vercel Cron sends it as a Bearer token.
+  CRON_SECRET: z.string().optional().default(''),
   VT_BASE_URL: z.string().default('https://www.virustotal.com/api/v3'),
   VT_RATE_LIMIT_PER_MIN: z.string().default('4').transform((val) => parseInt(val, 10)),
   MAX_UPLOAD_MB: z.string().default('32').transform((val) => parseInt(val, 10)),

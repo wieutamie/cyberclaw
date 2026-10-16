@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../lib/logger.js';
+import { env } from '../config/env.js';
 import { VirusTotalError } from '../lib/virustotal/client.js';
 
 export class AppError extends Error {
@@ -66,7 +67,7 @@ export function errorHandler(
       ok: false,
       error: {
         code: 'FILE_TOO_LARGE',
-        message: 'File size exceeds maximum allowed limit (32 MB).',
+        message: `File size exceeds the maximum allowed limit (${env.MAX_UPLOAD_MB} MB).`,
       },
     });
   }
