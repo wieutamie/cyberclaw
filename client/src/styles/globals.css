@@ -1,0 +1,470 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-brand: #FF0090;
+  --color-accent: #FF4F79;
+  --color-bg: #17183B;
+  --color-surface: #602F4B;
+  --color-surface-alt: #412431;
+  --color-text-muted: #64748B;
+  --color-danger: #FF0000;
+  --color-warning: #FF7300;
+  --color-clean: #11FF00;
+  --color-text: #FFFFFF;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #17183B;
+}
+::-webkit-scrollbar-thumb {
+  background: #412431;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #602F4B;
+}
+
+/* ScanBuffers animations */
+@keyframes spinLogo {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulseOpacity {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.animate-scan-logo {
+  animation: spinLogo 1.2s linear infinite;
+}
+
+/* BufferCat: mengayun ke kanan & ke kiri beberapa kali selama pemindaian */
+@keyframes swingCat {
+  0% {
+    transform: rotate(0deg);
+  }
+  15% {
+    transform: rotate(14deg);
+  }
+  35% {
+    transform: rotate(-14deg);
+  }
+  55% {
+    transform: rotate(12deg);
+  }
+  75% {
+    transform: rotate(-12deg);
+  }
+  90% {
+    transform: rotate(6deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+.animate-cat-swing {
+  transform-origin: 50% 82%;
+  animation: swingCat 2.6s ease-in-out infinite;
+}
+
+/* BufferCat: mutar 360 derajat sekali saat hasil akan ditampilkan */
+@keyframes spinCat {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-cat-spin {
+  transform-origin: 50% 50%;
+  animation: spinCat 0.9s cubic-bezier(0.34, 1.2, 0.64, 1) 1 both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-scan-logo {
+    animation: pulseOpacity 1.5s ease-in-out infinite;
+  }
+  .animate-cat-swing {
+    animation: pulseOpacity 1.5s ease-in-out infinite;
+  }
+  .animate-cat-spin {
+    animation: spinCat 0.9s ease-in-out 1 both;
+  }
+}
+
+/* Dots bounce animation */
+@keyframes dotBlink {
+  0%, 20% {
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.dot-1 {
+  animation: dotBlink 1.4s infinite 0.2s;
+}
+.dot-2 {
+  animation: dotBlink 1.4s infinite 0.4s;
+}
+.dot-3 {
+  animation: dotBlink 1.4s infinite 0.6s;
+}
+
+/* App shell: dark navy body with the Cyber Claw wolf watermark (see design mockups).
+   Large + faint so it reads as subtle branding without competing with content. */
+.app-shell {
+  position: relative;
+  min-height: 100vh;
+  background-color: var(--color-bg);
+}
+
+.app-shell::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-color: #FCEEEA;
+  -webkit-mask-image: url('/LogoCC.svg');
+  mask-image: url('/LogoCC.svg');
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center 72%;
+  mask-position: center 72%;
+  /* Scale with the viewport so the mark stays proportional to the UI: ~half the
+     viewport width on large screens, capped so it never dwarfs the 1320px content
+     column and never shrinks below a legible size on mobile. */
+  -webkit-mask-size: clamp(520px, 58vw, 1120px);
+  mask-size: clamp(520px, 58vw, 1120px);
+  opacity: 0.035;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Keep page content above the watermark, but do NOT flatten the header into the
+   same stacking context as <main> — otherwise the header dropdown gets covered by
+   the scanner card. Header manages its own z-index (z-50) via Tailwind. */
+.app-shell > main,
+.app-shell > footer,
+.auth-shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Auth pages watermark (centered behind the card) */
+.auth-shell::before {
+  background-position: center center;
+  /* Slightly larger proportionally, same clamp approach as the app shell. */
+  background-size: clamp(480px, 62vw, 900px);
+  opacity: 0.08;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Motion primitives (shared, subtle — no neon/glow per brand rules)
+   ──────────────────────────────────────────────────────────────── */
+
+/* Fade + rise on mount; used by page sections and cards for a lively entrance */
+@keyframes fadeRise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-rise {
+  animation: fadeRise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Slow drifting gradient used behind the header for a "living" surface */
+@keyframes headerSheen {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.header-sheen {
+  background-color: #ff4f79;
+  background-image: linear-gradient(
+    110deg,
+    #b31c68 0%,
+    #ff4f79 28%,
+    #ff6f90 50%,
+    #d62a63 74%,
+    #ff4f79 100%
+  );
+  background-size: 260% 100%;
+  animation: headerSheen 16s ease-in-out infinite;
+}
+
+/* Animated underline that grows from the left on hover/active */
+.nav-underline {
+  position: relative;
+}
+.nav-underline::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -6px;
+  height: 2px;
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: left;
+  background: #ffffff;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.nav-underline:hover::after,
+.nav-underline[data-active='true']::after {
+  transform: scaleX(1);
+}
+
+/* Gentle float for hero illustrations / decorative marks */
+@keyframes floatY {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-float {
+  animation: floatY 4.5s ease-in-out infinite;
+}
+
+/* Soft sweep highlight used on primary CTAs (runs once per hover) */
+@keyframes sheenSweep {
+  from {
+    transform: translateX(-120%);
+  }
+  to {
+    transform: translateX(220%);
+  }
+}
+
+.cta-sheen {
+  position: relative;
+  overflow: hidden;
+}
+.cta-sheen::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(255, 255, 255, 0.28),
+    transparent
+  );
+  transform: translateX(-120%);
+  pointer-events: none;
+}
+.cta-sheen:hover::before {
+  animation: sheenSweep 0.85s ease-out;
+}
+
+/* Live status dot for the header scan indicator */
+@keyframes livePulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(1.35);
+  }
+}
+.animate-live-dot {
+  animation: livePulse 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-rise,
+  .animate-float,
+  .animate-live-dot,
+  .header-sheen {
+    animation: none;
+  }
+  .cta-sheen:hover::before {
+    animation: none;
+  }
+}
+
+/* Button & focus styles */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible,
+[role='button']:focus-visible,
+[role='menuitem']:focus-visible,
+[role='tab']:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ScanTabBar: the active glyph inside the raised disc pops + fades in as the
+   disc settles on the newly-active tab, so the swap reads as one flowing move
+   rather than a hard cut. */
+@keyframes discIconIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.scan-tab-disc-icon {
+  animation: discIconIn 520ms cubic-bezier(0.34, 1.35, 0.4, 1) both;
+}
+
+/* ── Result reveal "gemash" effect ────────────────────────────────────────
+   When a finished scan first lands on screen we flash a cheeky cat burst over
+   the card: the BufferCat springs in with a squishy overshoot, a ring of paw
+   sparks/scratches shoots outward, and the whole thing winks away. Purely
+   decorative — pointer-events:none so it never blocks the result beneath. */
+@keyframes gemashBurst {
+  0% {
+    opacity: 0;
+    transform: scale(0.35) rotate(-8deg);
+  }
+  18% {
+    opacity: 1;
+    transform: scale(1.18) rotate(4deg);
+  }
+  34% {
+    transform: scale(0.94) rotate(-2deg);
+  }
+  50% {
+    transform: scale(1.06) rotate(1deg);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.15) rotate(0deg);
+  }
+}
+
+.gemash-cat {
+  animation: gemashBurst 1250ms cubic-bezier(0.34, 1.4, 0.5, 1) both;
+}
+
+/* Outward shockwave ring that expands and fades with the burst. */
+@keyframes gemashRing {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.4);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+}
+
+.gemash-ring {
+  animation: gemashRing 900ms ease-out both;
+}
+
+/* Individual sparkles radiate from the centre; each is positioned with a
+   per-item --angle custom property and drifts a little further out as it
+   fades, so the ring reads as a lively "sparkle pop". */
+@keyframes gemashSpark {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-14px) scale(0.4);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-92px) scale(1);
+  }
+}
+
+.gemash-spark {
+  animation: gemashSpark 820ms ease-out both;
+}
+
+/* The card itself pops in just behind the burst. */
+@keyframes resultCardPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.9) translateY(14px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.015) translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.result-card-pop {
+  animation: resultCardPop 620ms cubic-bezier(0.34, 1.3, 0.5, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gemash-cat,
+  .gemash-ring,
+  .gemash-spark,
+  .result-card-pop {
+    animation: fadeRise 300ms ease-out both;
+  }
+}
+

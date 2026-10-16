@@ -1,0 +1,193 @@
+import React, { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { ScanRecord, ScanStats } from '../../types/index.js';
+
+interface ReportSidebarProps {
+  scan: ScanRecord;
+}
+
+const EMPTY_STATS: ScanStats = {
+  malicious: 0,
+  suspicious: 0,
+  harmless: 0,
+  undetected: 0,
+  timeout: 0,
+  failure: 0,
+  unsupported: 0,
+};
+
+interface MiniRow {
+  name: string;
+  status: string;
+  statusClass: string;
+}
+
+/**
+ * Right-hand summary rail for the Full Report page. Mirrors the mockup: a small
+ * "no threat" list, Danger/Warning cards, a detection donut, the Scan Another
+ * CTA and the Clean/Undetected footer cards.
+ */
+export const ReportSidebar: React.FC<ReportSidebarProps> = ({ scan }) => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  const vendors = scan.vendor_results || [];
+  const stats = scan.stats || EMPTY_STATS;
+
+  const totalEngines =
+    stats.malicious + stats.suspicious + stats.harmless + stats.undetected;
+  const detected = stats.malicious + stats.suspicious;
+  const detectedPercent = totalEngines > 0 ? Math.round((detected / totalEngines) * 100) : 0;
+
+  // The mockup surfaces a few "safe looking" engines as a quick reassurance list.
+  const miniRows: MiniRow[] = useMemo(() => {
+    const cleanish = vendors.filter(
+      (v) => v.category === 'harmless' || v.category === 'undetected'
+    );
+    return cleanish.slice(0, 6).map((v) => {
+      const isUndetected = v.category === 'undetected';
+      return {
+        name: v.engine_name,
+        status: isUndetected ? 'Undetected' : 'No Threat',
+        statusClass: isUndetected ? 'text-muted' : 'text-status-clean',
+      };
+    });
+  }, [vendors]);
+
+  // Donut geometry — a simple conic-gradient ring, no chart library needed.
+  const detectedAngle = (detectedPercent / 100) * 360;
+
+  const dangerCount = stats.malicious;
+  const warningCount = stats.suspicious;
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Quick "no threat" mini list */}
+      {miniRows.length > 0 && (
+        <div className="rounded-2xl bg-bg p-4 flex flex-col gap-2">
+          {miniRows.map((row) => (
+            <div key={row.name} className="flex items-center justify-between gap-3">
+              <span className="text-[13px] font-semibold text-white truncate">
+                {row.name}
+              </span>
+              <span className={`text-[11px] font-semibold shrink-0 ${row.statusClass}`}>
+                {row.status}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Danger / Warning cards */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-2xl overflow-hidden shadow-soft">
+          <div className="bg-status-danger h-9 flex items-center justify-center">
+            <span className="text-[12px] font-extrabold text-white">
+              Danger
+            </span>
+          </div>
+          <div className="bg-bg px-3 py-2.5 text-center">
+            <div className="text-white text-sm font-bold">
+              {dangerCount} / {totalEngines} Vendor
+            </div>
+            <p className="mt-1 text-[9px] leading-tight text-muted">
+              File with malicious files detected. Guarantee strongly updated
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-2xl overflow-hidden shadow-soft">
+          <div className="bg-status-warning h-9 flex items-center justify-center">
+            <span className="text-[12px] font-extrabold text-white">
+              Warning
+            </span>
+          </div>
+          <div className="bg-bg px-3 py-2.5 text-center">
+            <div className="text-white text-sm font-bold">
+              {warningCount} / {totalEngines} Vendor
+            </div>
+            <p className="mt-1 text-[9px] leading-tight text-muted">
+              File is very suspicious, but there are some unknown detection
+            </p>
+          </div>
+        </div>
+      </div>
+      {/* Detection donut */}
+      <div className="flex items-center justify-center py-1">
+        <div
+          className="relative w-36 h-36 rounded-full flex items-center justify-center"
+          style={{
+            background: `conic-gradient(#FF4F79 0deg ${detectedAngle}deg, #412431 ${detectedAngle}deg 360deg)`,
+          }}
+        >
+          <div className="absolute inset-[12px] rounded-full bg-bg flex flex-col items-center justify-center">
+            <span className="text-[26px] font-extrabold text-white leading-none">
+              {detectedPercent}%
+            </span>
+            <span className="text-[11px] font-semibold text-muted mt-0.5">
+              Detected
+            </span>
+            <span className="text-[10px] text-muted">Total Scan</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Scan another CTA + Back */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => navigate('/dashboard?tab=file&pick=1')}
+          className="cta-sheen flex-1 py-3 rounded-btn bg-brand hover:bg-brand-accent text-white text-sm font-bold transition-all shadow-soft"
+        >
+          Scan Another File
+        </button>
+        <button
+          onClick={() => navigate(`/scan/${scan.id}`)}
+          className="py-3 px-5 rounded-btn bg-surface-alt hover:bg-surface text-white text-sm font-bold transition-all"
+        >
+          Back
+        </button>
+      </div>
+
+      {/* Clean / Undetected footer cards */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-2xl overflow-hidden shadow-soft">
+          <div className="bg-status-clean h-9 flex items-center justify-center">
+            <span className="text-[12px] font-extrabold text-bg">
+              Clean
+            </span>
+          </div>
+          <div className="bg-bg px-3 py-2.5 text-center">
+            <div className="text-white text-sm font-bold">
+              {stats.harmless} / {totalEngines} Vendor
+            </div>
+            <p className="mt-1 text-[9px] leading-tight text-muted">
+              File with no harmful behaviour and contains no known threats
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-2xl overflow-hidden shadow-soft">
+          <div className="bg-status-neutral h-9 flex items-center justify-center">
+            <span className="text-[12px] font-extrabold text-white">
+              Undetected
+            </span>
+          </div>
+          <div className="bg-bg px-3 py-2.5 text-center">
+            <div className="text-white text-sm font-bold">
+              {stats.undetected} / {totalEngines} Vendor
+            </div>
+            <p className="mt-1 text-[9px] leading-tight text-muted">
+              Undetected by vendors supporting signature-based detection
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <span className="text-center text-[10px] text-muted">
+        {t('common.poweredBy')}
+      </span>
+    </div>
+  );
+};
+

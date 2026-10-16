@@ -1,0 +1,101 @@
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { api } from '../lib/api.js';
+import { UserSettings } from '../types/index.js';
+
+interface SettingsContextType {
+  settings: UserSettings;
+  loading: boolean;
+  updateSettings: (updates: Partial<UserSettings>) => Promise<void>;
+  apiKeyMeta: { hasKey: boolean; last4: string | null };
+  refreshApiKeyMeta: () => Promise<void>;
+}
+
+const defaultSettings: UserSettings = {
+  user_id: 'default',
+  timezone: 'Asia/Jakarta',
+  date_format: 'DD/MM/YYYY',
+  time_format: '24h',
+  language: 'id',
+  default_tab: 'file',
+  danger_threshold: 3,
+  show_upload_warning: true,
+  auto_open_report: false,
+  history_retention_days: 90,
+  updated_at: new Date().toISOString(),
+};
+
+const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
+
+export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { i18n } = useTranslation();
+  const [settings, setSettings] = useState<UserSettings>(defaultSettings);
+  const [apiKeyMeta, setApiKeyMeta] = useState<{ hasKey: boolean; last4: string | null }>({
+    hasKey: true,
+    last4: 'DEMO',
+  });
+  const [loading, setLoading] = useState(true);
+
+  const refreshApiKeyMeta = async () => {
+    try {
+      const meta = await api.getApiKeyMeta();
+      setApiKeyMeta(meta);
+    } catch {
+      // fallback
+    }
+  };
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const data = await api.getSettings();
+        setSettings(data);
+        if (data.language && data.language !== i18n.language) {
+          i18n.changeLanguage(data.language);
+          localStorage.setItem('cyberclaw_language', data.language);
+        }
+      } catch (err) {
+        console.error('Failed to load settings:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSettings();
+    refreshApiKeyMeta();
+  }, [i18n]);
+
+  const updateSettings = async (updates: Partial<UserSettings>) => {
+    try {
+      const updated = await api.updateSettings(updates);
+      setSettings(updated);
+      if (updates.language && updates.language !== i18n.language) {
+        i18n.changeLanguage(updates.language);
+        localStorage.setItem('cyberclaw_language', updates.language);
+      }
+    } catch (err) {
+      console.error('Failed to update settings:', err);
+      throw err;
+    }
+  };
+
+  return (
+    <SettingsContext.Provider
+      value={{
+        settings,
+        loading,
+        updateSettings,
+        apiKeyMeta,
+        refreshApiKeyMeta,
+      }}
+    >
+      {children}
+    </SettingsContext.Provider>
+  );
+};
+
+export function useSettings() {
+  const context = useContext(SettingsContext);
+  if (!context) throw new Error('useSettings must be used within a SettingsProvider');
+  return context;
+}
