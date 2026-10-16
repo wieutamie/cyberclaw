@@ -411,46 +411,4 @@ export const api = {
         return merged;
       }
     ),
-
-  getApiKeyMeta: async (): Promise<{ hasKey: boolean; last4: string | null }> =>
-    withFallback(
-      () => request<{ hasKey: boolean; last4: string | null }>('/settings/api-key'),
-      () => mockBackend.getApiKeyMeta()
-    ),
-
-  saveApiKey: async (apiKey: string): Promise<void> =>
-    withFallback(
-      async () => {
-        await request('/settings/api-key', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ apiKey }),
-        });
-      },
-      () => mockBackend.saveApiKey(apiKey)
-    ),
-
-  removeApiKey: async (): Promise<void> =>
-    withFallback(
-      async () => {
-        await request('/settings/api-key', { method: 'DELETE' });
-      },
-      () => mockBackend.removeApiKey()
-    ),
-
-  // NOTE: no silent "true" fallback. If we cannot reach VirusTotal (or the
-  // backend), we report the key as unverified rather than pretending it works.
-  testApiKey: async (apiKey?: string): Promise<boolean> => {
-    try {
-      const res = await request<{ valid: boolean }>('/settings/api-key/test', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(apiKey ? { apiKey } : {}),
-      });
-      return res.valid;
-    } catch (err) {
-      if (isNetworkError(err)) return false;
-      throw err;
-    }
-  },
 };

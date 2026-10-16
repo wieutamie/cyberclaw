@@ -7,8 +7,6 @@ interface SettingsContextType {
   settings: UserSettings;
   loading: boolean;
   updateSettings: (updates: Partial<UserSettings>) => Promise<void>;
-  apiKeyMeta: { hasKey: boolean; last4: string | null };
-  refreshApiKeyMeta: () => Promise<void>;
 }
 
 const defaultSettings: UserSettings = {
@@ -30,20 +28,7 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { i18n } = useTranslation();
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
-  const [apiKeyMeta, setApiKeyMeta] = useState<{ hasKey: boolean; last4: string | null }>({
-    hasKey: true,
-    last4: 'DEMO',
-  });
   const [loading, setLoading] = useState(true);
-
-  const refreshApiKeyMeta = async () => {
-    try {
-      const meta = await api.getApiKeyMeta();
-      setApiKeyMeta(meta);
-    } catch {
-      // fallback
-    }
-  };
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -62,7 +47,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
 
     loadSettings();
-    refreshApiKeyMeta();
   }, [i18n]);
 
   const updateSettings = async (updates: Partial<UserSettings>) => {
@@ -85,8 +69,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         settings,
         loading,
         updateSettings,
-        apiKeyMeta,
-        refreshApiKeyMeta,
       }}
     >
       {children}

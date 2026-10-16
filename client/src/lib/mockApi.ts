@@ -2,7 +2,6 @@ import { ScanRecord, ScanType, ScanStats, VendorResult, Verdict, UserSettings } 
 import { CANONICAL_VENDORS } from './vendors.js';
 
 const STORAGE_SCANS_KEY = 'cyberclaw_mock_scans';
-const STORAGE_KEY_META_KEY = 'cyberclaw_mock_apikey';
 
 /**
  * Removes all locally-stored (mock/offline) scan history from this browser.
@@ -159,20 +158,6 @@ export function generateMockVendors(isMalicious: boolean, customCategory?: strin
 }
 
 export const mockBackend = {
-  getApiKeyMeta: () => {
-    const key = localStorage.getItem(STORAGE_KEY_META_KEY);
-    if (!key) return { hasKey: true, last4: 'DEMO' }; // default active demo key
-    return { hasKey: true, last4: key.slice(-4) };
-  },
-
-  saveApiKey: (key: string) => {
-    localStorage.setItem(STORAGE_KEY_META_KEY, key);
-  },
-
-  removeApiKey: () => {
-    localStorage.removeItem(STORAGE_KEY_META_KEY);
-  },
-
   createFileScan: async (file: File, userId: string, threshold = 3): Promise<ScanRecord> => {
     const sha256 = await computeSha256(file);
     const scanId = crypto.randomUUID();
