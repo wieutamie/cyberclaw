@@ -23,7 +23,6 @@ export const SUPPORTED_LANGUAGES = [
 
 export const updateSettingsSchema = z.object({
   timezone: z.string().trim().min(1).max(64).optional(),
-  date_format: z.enum(['DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD']).optional(),
   time_format: z.enum(['12h', '24h']).optional(),
   language: z.enum(SUPPORTED_LANGUAGES).optional(),
   default_tab: z.enum(['file', 'url', 'hash', 'history']).optional(),

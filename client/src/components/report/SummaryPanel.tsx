@@ -237,7 +237,6 @@ export const SummaryPanel: React.FC<SummaryPanelProps> = ({ scan, onRescanSucces
               {formatDateTime(
                 scan.completed_at || scan.created_at,
                 settings.timezone,
-                settings.date_format,
                 settings.time_format
               )}
             </span>

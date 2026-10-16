@@ -9,7 +9,8 @@ import { DEFAULT_LANGUAGE, LANGUAGE_CODES } from '../lib/languages.js';
 // keeps working. Languages without a translation bundle fall back to English
 // key-by-key via `fallbackLng`.
 function resolveInitialLanguage(): string {
-  const saved = localStorage.getItem('cyberclaw_language');
+  const saved =
+    typeof localStorage !== 'undefined' ? localStorage.getItem('cyberclaw_language') : null;
   if (saved) {
     const base = saved.toLowerCase().split('-')[0];
     if (LANGUAGE_CODES.includes(base)) return base;

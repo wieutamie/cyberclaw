@@ -383,7 +383,6 @@ export const api = {
         return {
           user_id: 'offline-user',
           timezone: 'Asia/Jakarta',
-          date_format: 'DD/MM/YYYY',
           time_format: '24h',
           language: 'en',
           default_tab: 'file',

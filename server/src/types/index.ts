@@ -81,7 +81,6 @@ export interface ScanRecord {
 export interface UserSettings {
   user_id: string;
   timezone: string;
-  date_format: 'DD/MM/YYYY' | 'MM/DD/YYYY' | 'YYYY-MM-DD';
   time_format: '12h' | '24h';
   language: string;
   default_tab: 'file' | 'url' | 'hash' | 'history';

@@ -1,9 +1,16 @@
-import { formatInTimeZone } from 'date-fns-tz';
+import i18n from '../i18n/index.js';
 
+/**
+ * Formats a timestamp for display.
+ *
+ * The date layout is derived automatically from the active UI locale (e.g.
+ * `id` → `31/12/2024`, `en` → `12/31/2024`) so the user no longer has to pick a
+ * date format by hand — it simply follows the calendar/locale they are using.
+ * Only the time style (12-hour vs 24-hour) remains user-configurable.
+ */
 export function formatDateTime(
   dateInput: string | number | Date | null | undefined,
   timezone: string = 'Asia/Jakarta',
-  dateFormat: 'DD/MM/YYYY' | 'MM/DD/YYYY' | 'YYYY-MM-DD' = 'DD/MM/YYYY',
   timeFormat: '12h' | '24h' = '24h'
 ): string {
   if (!dateInput) return '—';
@@ -18,18 +25,29 @@ export function formatDateTime(
 
   if (isNaN(date.getTime())) return '—';
 
-  let df = 'dd/MM/yyyy';
-  if (dateFormat === 'MM/DD/YYYY') df = 'MM/dd/yyyy';
-  if (dateFormat === 'YYYY-MM-DD') df = 'yyyy-MM-dd';
+  const locale = (i18n.language || 'en').split('-')[0];
 
-  const tf = timeFormat === '12h' ? 'hh:mm:ss a' : 'HH:mm:ss';
-  const pattern = `${df} ${tf}`;
+  const build = (tz: string) =>
+    new Intl.DateTimeFormat(locale, {
+      timeZone: tz,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: timeFormat === '12h',
+    }).format(date);
 
   try {
-    return formatInTimeZone(date, timezone, pattern);
+    return build(timezone);
   } catch {
     // Fallback to UTC if timezone invalid
-    return formatInTimeZone(date, 'UTC', pattern);
+    try {
+      return build('UTC');
+    } catch {
+      return date.toISOString();
+    }
   }
 }
 

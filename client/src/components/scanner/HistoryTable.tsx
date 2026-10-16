@@ -237,7 +237,6 @@ export const HistoryTable: React.FC = () => {
                       {formatDateTime(
                         scan.created_at,
                         settings.timezone,
-                        settings.date_format,
                         settings.time_format
                       )}
                     </td>
@@ -275,7 +274,6 @@ export const HistoryTable: React.FC = () => {
                     {formatDateTime(
                       scan.created_at,
                       settings.timezone,
-                      settings.date_format,
                       settings.time_format
                     )}
                   </span>

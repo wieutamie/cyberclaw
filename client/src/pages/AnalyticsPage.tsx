@@ -196,7 +196,6 @@ export const AnalyticsPage: React.FC = () => {
                           {formatDateTime(
                             act.created_at,
                             settings.timezone,
-                            settings.date_format,
                             settings.time_format
                           )}
                         </td>

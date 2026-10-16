@@ -21,6 +21,7 @@
 | 1.0 | Draf awal (berbasis Next.js). |
 | 1.1 | Stack diganti: **React + Vite + TypeScript** (frontend), **Node.js + Express** (backend), **React Router DOM** (routing). Struktur repo dipisah menjadi `client/` dan `server/`. Endpoint kini berupa **Express Routes**. Variabel lingkungan dipisah per paket. Deployment: **Vercel** (client) dan **Railway/Render** (server). Bagian yang terdampak: 2.1, 5.1, 5.3, 5.5, 6.1–6.2, 7 (ditulis ulang), 8.1, 8.3, 8.5, 9.2–9.3, 10.1, FR-AUTH-07. **Palet warna, halaman, alur pengguna, fitur, skema database, dan target NFR tidak berubah** (hanya implementasi teknisnya yang disesuaikan). |
 | 1.2 | **API Key per pengguna dihapus** dari UI client (tab "API Keys" pada Preferences dihilangkan; Preferences kini hanya tab **General**). Backend tetap menyelesaikan kunci via `SYSTEM_VT_API_KEY` sebagai fallback, sehingga pemindaian tetap berjalan tanpa kunci pribadi. **Label Hamburger Menu disederhanakan menjadi satu kata**: Dashboard, Analytics, Preferences, Help, About. Halaman **About** diperkaya (badge versi, spesifikasi teknis, kartu pengembang, lisensi & tautan kode sumber). Bagian terdampak: 1.4, 2.1, 2.2, 2.4, 7, 9.1 (AC-12, AC-14, AC-19), 9.2. |
+| 1.3 | **Preferences → General dirapikan.** Opsi **format tanggal dihapus** dari UI: format tanggal kini diturunkan otomatis dari bahasa/wilayah aktif (`Intl.DateTimeFormat`), sehingga pengguna tidak perlu memilihnya. Kontrol **format jam** diganti menjadi dua tombol kartu **24-hour** / **12-hour** dengan pratinjau langsung. Kolom `user_settings.date_format` dihapus (migrasi `20240104_locale_date_format.sql`). Bagian terdampak: 3.5.1, 6.3. |
 
 ---
 
@@ -367,7 +368,7 @@ Disusun sebagai **dua kolom** (responsif: menumpuk di layar kecil) di dalam hala
 
 | Section | Kontrol | Perilaku |
 |---|---|---|
-| **Date & Time** | (a) Time Zone: dropdown **lengkap** dari `Intl.supportedValuesOf('timeZone')` (fallback daftar kurasi), dikelompokkan per region dan menampilkan label offset (mis. `Asia/Jakarta (GMT+7)`); (b) format tanggal (`DD/MM/YYYY`, `MM/DD/YYYY`, `YYYY-MM-DD`); (c) format jam (12/24) | Berlaku global untuk semua timestamp. Default timezone = `Asia/Jakarta` |
+| **Date & Time** | (a) Time Zone: dropdown **lengkap** dari `Intl.supportedValuesOf('timeZone')` (fallback daftar kurasi), dikelompokkan per region dan menampilkan label offset (mis. `Asia/Jakarta (GMT+7)`); (b) format jam dipilih lewat dua tombol kartu **24-hour** (`14:30`) / **12-hour** (`2:30 PM`) dengan pratinjau langsung; (c) **format tanggal otomatis** mengikuti bahasa/wilayah aktif (mis. `id` → `31/12/2024`, `en` → `12/31/2024`) — tidak ada lagi opsi manual | Berlaku global untuk semua timestamp. Default timezone = `Asia/Jakarta` |
 | **Language** | Dropdown **18 bahasa** (English default, Indonesian, Malay, Spanish, Portuguese, French, German, Italian, Dutch, Russian, Turkish, Arabic, Hindi, Thai, Vietnamese, Chinese, Japanese, Korean) | Perubahan langsung diterapkan tanpa reload penuh; disimpan di `user_settings.language` **dan** `localStorage`. Bahasa tanpa berkas terjemahan otomatis fallback ke English per-key |
 | **Scan Preferences** | (a) Tab default dashboard, (b) Threshold Danger T (1–10, default 3), (c) Tampilkan dialog privasi sebelum upload (toggle, default ON), (d) Otomatis buka Full Report setelah scan (toggle, default OFF) | Disimpan di `user_settings` |
 | **History Retention** | (a) Retensi riwayat: 30 hari / 90 hari / 1 tahun / Selamanya (default 90 hari), (b) tombol **Export CSV**, (c) tombol **Clear All History** (danger, konfirmasi dengan mengetik `DELETE`) | Job pembersihan harian menghapus data melewati retensi |
@@ -610,7 +611,6 @@ create table profiles (
 create table user_settings (
   user_id uuid primary key references profiles(id) on delete cascade,
   timezone text not null default 'Asia/Jakarta',
-  date_format text not null default 'DD/MM/YYYY' check (date_format in ('DD/MM/YYYY','MM/DD/YYYY','YYYY-MM-DD')),
   time_format text not null default '24h' check (time_format in ('12h','24h')),
   language text not null default 'en' check (language ~ '^[a-z]{2}$'),
   default_tab text not null default 'file' check (default_tab in ('file','url','hash','history')),
@@ -719,7 +719,7 @@ Catatan implementasi:
 | State & data fetching | TanStack Query (cache & polling), React Hook Form + Zod, React Context (Auth, Settings) |
 | Grafik | Recharts (donat & garis), dimuat lazy |
 | i18n | `react-i18next` (id, en) |
-| Tanggal | `date-fns` + `date-fns-tz` |
+| Tanggal | `Intl.DateTimeFormat` (format tanggal otomatis dari locale + timezone; format jam 12/24) |
 | Auth (klien) | `@supabase/supabase-js` — hanya untuk Auth (email/password, Google, GitHub) |
 | **Backend** | **Node.js 20 LTS + Express 4 + TypeScript** (dev: `tsx watch`; build: `tsc`) |
 | Middleware server | `helmet`, `cors`, `express-rate-limit`, `multer` (memoryStorage), `pino` + `pino-http`, `zod` |

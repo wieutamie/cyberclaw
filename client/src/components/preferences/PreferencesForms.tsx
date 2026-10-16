@@ -9,14 +9,22 @@ import {
   Trash2,
   Download,
   AlertTriangle,
+  CalendarDays,
 } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext.js';
 import { api } from '../../lib/api.js';
 import { Modal } from '../ui/Modal.js';
 import { getAllTimezones, groupTimezones, tzOffsetLabel } from '../../lib/timezones.js';
 import { LANGUAGES, findLanguage } from '../../lib/languages.js';
+import { formatDateTime } from '../../lib/format.js';
 
 const TIMEZONE_GROUPS = groupTimezones(getAllTimezones());
+
+/** Time-format options paired with a concrete sample (24h vs 12h). */
+const TIME_FORMATS: { value: string; sample: string }[] = [
+  { value: '24h', sample: '14:30' },
+  { value: '12h', sample: '2:30 PM' },
+];
 
 export const GeneralPreferences: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -24,7 +32,6 @@ export const GeneralPreferences: React.FC = () => {
 
   // Date & Time
   const [timezone, setTimezone] = useState(settings.timezone || 'Asia/Jakarta');
-  const [dateFormat, setDateFormat] = useState<string>(settings.date_format || 'DD/MM/YYYY');
   const [timeFormat, setTimeFormat] = useState<string>(settings.time_format || '24h');
 
   // Scan Preferences
@@ -50,7 +57,6 @@ export const GeneralPreferences: React.FC = () => {
     e.preventDefault();
     await updateSettings({
       timezone,
-      date_format: dateFormat as any,
       time_format: timeFormat as any,
     });
     showSuccessToast(t('common.saved'));
@@ -118,8 +124,6 @@ export const GeneralPreferences: React.FC = () => {
           <DateTimeSection
             timezone={timezone}
             setTimezone={setTimezone}
-            dateFormat={dateFormat}
-            setDateFormat={setDateFormat}
             timeFormat={timeFormat}
             setTimeFormat={setTimeFormat}
             onSubmit={handleSaveDateTime}
@@ -137,7 +141,7 @@ export const GeneralPreferences: React.FC = () => {
           />
         </div>
 
-        {/* Right column — Scan Preferences + History Retention */}
+        {/* Right column — Scan Preferences + History & Retention */}
         <div className="flex flex-col gap-6">
           <ScanSection
             defaultTab={defaultTab}
@@ -195,8 +199,6 @@ interface CommonProps {
 interface DateTimeSectionProps extends CommonProps {
   timezone: string;
   setTimezone: (v: string) => void;
-  dateFormat: string;
-  setDateFormat: (v: string) => void;
   timeFormat: string;
   setTimeFormat: (v: string) => void;
   onSubmit: (e: React.FormEvent) => void;
@@ -205,8 +207,6 @@ interface DateTimeSectionProps extends CommonProps {
 const DateTimeSection: React.FC<DateTimeSectionProps> = ({
   timezone,
   setTimezone,
-  dateFormat,
-  setDateFormat,
   timeFormat,
   setTimeFormat,
   onSubmit,
@@ -238,32 +238,49 @@ const DateTimeSection: React.FC<DateTimeSectionProps> = ({
             </optgroup>
           ))}
         </select>
+        <span className="text-[11px] text-muted mt-1 block">
+          {t('preferences.dateFormatAuto')}
+        </span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className={labelClass}>{t('preferences.dateFormat')}</label>
-          <select
-            value={dateFormat}
-            onChange={(e) => setDateFormat(e.target.value)}
-            className={selectClass}
-          >
-            <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-            <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-            <option value="YYYY-MM-DD">YYYY-MM-DD</option>
-          </select>
+      <div>
+        <label className={labelClass}>{t('preferences.timeFormat')}</label>
+        <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label={t('preferences.timeFormat')}>
+          {TIME_FORMATS.map((fmt) => {
+            const active = timeFormat === fmt.value;
+            return (
+              <button
+                key={fmt.value}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() => setTimeFormat(fmt.value)}
+                className={`flex flex-col items-start gap-0.5 px-4 py-3 rounded-btn border text-left transition-colors ${
+                  active
+                    ? 'border-brand-accent bg-brand-accent/15'
+                    : 'border-surface-alt bg-surface-alt hover:border-brand-accent/50'
+                }`}
+              >
+                <span className="text-sm font-bold font-mono text-white">{fmt.sample}</span>
+                <span className="text-[11px] text-muted">
+                  {fmt.value === '24h' ? t('preferences.timeFormat24') : t('preferences.timeFormat12')}
+                </span>
+              </button>
+            );
+          })}
         </div>
+      </div>
 
-        <div>
-          <label className={labelClass}>{t('preferences.timeFormat')}</label>
-          <select
-            value={timeFormat}
-            onChange={(e) => setTimeFormat(e.target.value)}
-            className={selectClass}
-          >
-            <option value="24h">{t('preferences.timeFormat24')}</option>
-            <option value="12h">{t('preferences.timeFormat12')}</option>
-          </select>
+      {/* Live preview — shows exactly how timestamps will render everywhere */}
+      <div className="flex items-center gap-3 rounded-btn bg-surface-alt border border-surface-alt px-4 py-3">
+        <CalendarDays className="w-4 h-4 text-brand-accent shrink-0" />
+        <div className="flex flex-col">
+          <span className="text-[10px] uppercase tracking-wide text-muted font-semibold">
+            {t('preferences.dateTimePreview')}
+          </span>
+          <span className="text-sm font-mono text-white">
+            {formatDateTime(new Date(), timezone, timeFormat as '12h' | '24h')}
+          </span>
         </div>
       </div>
 

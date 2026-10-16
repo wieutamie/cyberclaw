@@ -3,7 +3,6 @@ import { UserSettings } from '../types/index.js';
 
 const DEFAULT_SETTINGS: Omit<UserSettings, 'user_id' | 'updated_at'> = {
   timezone: 'Asia/Jakarta',
-  date_format: 'DD/MM/YYYY',
   time_format: '24h',
   language: 'en',
   default_tab: 'file',
