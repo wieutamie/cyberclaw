@@ -18,7 +18,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ isOpen, onClose })
   const items = [
     { path: '/dashboard', label: t('common.dashboard'), icon: LayoutDashboard, divider: false },
     { path: '/analytics', label: t('common.analytics'), icon: BarChart3, divider: false },
-    { path: '/preferences', label: t('preferences.title'), icon: Sliders, divider: true },
+    { path: '/preferences', label: t('common.preferences'), icon: Sliders, divider: true },
     { path: '/help', label: t('common.help'), icon: BookOpen, divider: true },
     { path: '/about', label: t('common.about'), icon: Info, divider: false },
   ];

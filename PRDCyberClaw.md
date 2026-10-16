@@ -20,6 +20,7 @@
 |---|---|
 | 1.0 | Draf awal (berbasis Next.js). |
 | 1.1 | Stack diganti: **React + Vite + TypeScript** (frontend), **Node.js + Express** (backend), **React Router DOM** (routing). Struktur repo dipisah menjadi `client/` dan `server/`. Endpoint kini berupa **Express Routes**. Variabel lingkungan dipisah per paket. Deployment: **Vercel** (client) dan **Railway/Render** (server). Bagian yang terdampak: 2.1, 5.1, 5.3, 5.5, 6.1–6.2, 7 (ditulis ulang), 8.1, 8.3, 8.5, 9.2–9.3, 10.1, FR-AUTH-07. **Palet warna, halaman, alur pengguna, fitur, skema database, dan target NFR tidak berubah** (hanya implementasi teknisnya yang disesuaikan). |
+| 1.2 | **API Key per pengguna dihapus** dari UI client (tab "API Keys" pada Preferences dihilangkan; Preferences kini hanya tab **General**). Backend tetap menyelesaikan kunci via `SYSTEM_VT_API_KEY` sebagai fallback, sehingga pemindaian tetap berjalan tanpa kunci pribadi. **Label Hamburger Menu disederhanakan menjadi satu kata**: Dashboard, Analytics, Preferences, Help, About. Halaman **About** diperkaya (badge versi, spesifikasi teknis, kartu pengembang, lisensi & tautan kode sumber). Bagian terdampak: 1.4, 2.1, 2.2, 2.4, 7, 9.1 (AC-12, AC-14, AC-19), 9.2. |
 
 ---
 
@@ -61,8 +62,8 @@ Pengguna awam dan mahasiswa/IT junior sering kesulitan membaca hasil mentah Viru
 2. Dashboard Scanner dengan 4 tab: Scan File, Scan URL, Scan Hash, History.
 3. Loading state **ScanBuffers**, halaman **Scan Result** (3 status + Not Found untuk hash), halaman **Full Report**.
 4. Analytics (donat, garis, Recent Activity Log).
-5. Preferences: General dan API Keys.
-6. Hamburger menu navigasi (Dashboard, Analytics, Preferences, Help & Docs, About).
+5. Preferences: General (pengaturan akun & aplikasi).
+6. Hamburger menu navigasi (Dashboard, Analytics, Preferences, Help, About).
 7. Dukungan 2 bahasa (ID/EN) dan 2 zona waktu/format tanggal sesuai preferensi.
 
 ## 1.5 Out of Scope (MVP)
@@ -98,9 +99,9 @@ Routing dilakukan **di sisi klien** memakai **React Router DOM v6** (`createBrow
 | `/scan/:scanId` | `ScanPage` (ScanBuffers → Scan Result) | `ProtectedRoute` (pemilik) |
 | `/scan/:scanId/report` | `FullReportPage` | `ProtectedRoute` (pemilik) |
 | `/analytics` | `AnalyticsPage` | `ProtectedRoute` |
-| `/preferences` | `PreferencesPage` (`?tab=general\|api-keys`, default `general`) | `ProtectedRoute` |
+| `/preferences` | `PreferencesPage` (tab **General** saja, default `general`) | `ProtectedRoute` |
 | `/help` | `HelpPage` (Quick Start + FAQ) | `ProtectedRoute` |
-| `/about` | `AboutPage` (profil & kredit) | `ProtectedRoute` |
+| `/about` | `AboutPage` (profil, spesifikasi teknis, pengembang & kredit) | `ProtectedRoute` |
 | `/terms` | `TermsPage` (statis) | Publik |
 | `*` | `NotFoundPage` (404) | Publik |
 
@@ -117,7 +118,7 @@ Routing dilakukan **di sisi klien** memakai **React Router DOM v6** (`createBrow
 **A. Onboarding**
 ```
 Sign Up → (verifikasi email jika email+password) → Sign In → Dashboard
-        → [jika belum ada API Key & tidak ada system key] banner "Tambahkan API Key" → Preferences > API Keys
+        → [jika `SYSTEM_VT_API_KEY` tidak diset] banner "Layanan pemindaian belum dikonfigurasi" → Hubungi admin
 ```
 
 **B. Scan File**
@@ -134,7 +135,7 @@ Dashboard (tab Scan File) → pilih/drag file → validasi (ukuran/tipe) → kli
 
 **E. History:** tab History → klik baris → buka Scan Result (data dari database, tanpa memanggil ulang VT kecuali tombol Rescan).
 
-**F. Static Pages:** Hamburger Menu → Analytics / Preferences / Help & Docs / About.
+**F. Static Pages:** Hamburger Menu → Analytics / Preferences / Help / About.
 
 ## 2.3 Diagram Navigasi
 
@@ -157,15 +158,15 @@ flowchart TD
   HI --> R
   D -.hamburger.-> AN[Analytics]
   D -.hamburger.-> PR[Preferences]
-  D -.hamburger.-> HP[Help & Docs]
+  D -.hamburger.-> HP[Help]
   D -.hamburger.-> AB[About]
 ```
 
 ## 2.4 Komponen Global: Header & Hamburger Menu
 - **Header** (sticky, tinggi 64px, background `#FF0090`): kiri = logo Cyber Claw + wordmark; kanan = avatar/nama pengguna (opsional) + ikon hamburger.
-- **Hamburger Menu** (dropdown, lebar 240px, anchor kanan atas, background `#602F4B`, border `#412431`): item **Dashboard**, **Analytics**, pemisah, **Help & Docs**, **About**. Item aktif memiliki aksen kiri `#FF4F79`. Tutup dengan klik di luar, tombol `Esc`, atau memilih item. Navigasi keyboard (panah atas/bawah, Enter/Home/End) dan `aria-expanded`, `role="menu"`.
-- **Help & Docs** (`/help`): halaman dokumentasi berisi *Quick Start* (langkah scan file/URL/hash, menambah API Key, meninjau riwayat) dan *FAQ* akordeon.
-- **About** (`/about`): halaman profil aplikasi berisi ringkasan produk, kartu fitur, tech stack, dan kredit proyek (PT Infinite Learning Indonesia).
+- **Hamburger Menu** (dropdown, lebar 240px, anchor kanan atas, background `#602F4B`, border `#412431`): item berlabel **satu kata** — **Dashboard**, **Analytics**, pemisah, **Preferences**, pemisah, **Help**, **About**. Item aktif memiliki aksen kiri `#FF4F79`. Tutup dengan klik di luar, tombol `Esc`, atau memilih item. Navigasi keyboard (panah atas/bawah, Enter/Home/End) dan `aria-expanded`, `role="menu"`.
+- **Help** (`/help`): halaman dokumentasi berisi *Quick Start* (langkah scan file/URL/hash, meninjau riwayat) dan *FAQ* akordeon, dengan tautan ke dokumentasi resmi VirusTotal API v3.
+- **About** (`/about`): halaman profil aplikasi berisi badge versi, ringkasan produk, kartu fitur, **spesifikasi teknis** (ukuran unggah maks, jumlah engine, versi API, penyimpanan, retensi, bahasa), tech stack, **kartu pengembang**, serta kredit proyek (PT Infinite Learning Indonesia, lisensi MIT, tautan kode sumber).
 - Header tidak ditampilkan di halaman Sign In/Sign Up/Forgot Password.
 
 ---
@@ -215,7 +216,7 @@ Layout: kartu terpusat (maks 440px) di atas background `#17183B`; logo di atas k
 - **Panel Kanan:** kartu (`#602F4B`, border `#412431`, radius 16px) berisi **Tab bar** + konten tab.
 - Mobile/tablet (<1024px): panel menumpuk, panel kiri di atas dan lebih ringkas.
 - **Tab bar:** `Scan File | Scan URL | Scan Hash | History`. Tab aktif: garis bawah 3px `#FF0090` + teks putih; tidak aktif: `#64748B`; hover `#FF4F79`. Tab disinkronkan ke query `?tab=`. Akses keyboard (panah kiri/kanan) dan `role="tablist"`.
-- **Banner API Key:** jika pengguna tak punya API Key dan `SYSTEM_VT_API_KEY` tidak diset, tampilkan banner oranye `#FF7300` di atas kartu dengan CTA ke Preferences > API Keys; tombol SCAN NOW disabled.
+- **Banner konfigurasi:** jika `SYSTEM_VT_API_KEY` tidak diset di server, tampilkan banner oranye `#FF7300` di atas kartu (pesan bahwa layanan pemindaian belum dikonfigurasi); tombol SCAN NOW disabled. Tidak ada lagi CTA "Preferences > API Keys" karena permukaan API Key per pengguna telah dihapus (v1.2).
 
 ### 3.2.2 Tab: Scan File
 | ID | Requirement | P |
@@ -299,7 +300,7 @@ Kartu status utama di tengah (maks 640px), background `#602F4B`, border 2px sesu
 
 ### 3.3.3 State Khusus
 - **Not Found (hash):** kartu dengan warna `#64748B`, ikon tanda tanya, "Hash tidak ditemukan di database VirusTotal." CTA: **Scan File** (menuju tab file), **Scan Another**. Tidak ada tombol Full Report. Disimpan di History dengan status *Not Found*.
-- **Error:** (API Key salah, kuota habis, jaringan) → kartu error `#FF0000` dengan pesan spesifik dan tombol *Coba lagi* / *Ke Preferences* (lihat tabel error 5.7).
+- **Error:** (key sistem salah, kuota habis, jaringan) → kartu error `#FF0000` dengan pesan spesifik dan tombol *Coba lagi* (lihat tabel error 5.7).
 
 ### 3.3.4 Full Report (`/scan/[scanId]/report`)
 Layout desktop (≥1024px): grid 12 kolom.
@@ -356,7 +357,7 @@ Data hanya milik pengguna yang login. Filter rentang waktu global: **7 hari / 30
 | FR-ANL-06 | Grafik responsif dan memiliki teks alternatif/tabel ringkas untuk pembaca layar | S |
 
 ## 3.5 Preferences (`/preferences`)
-Navigasi sub-tab di bagian atas kartu: **General** | **API Keys**.
+Halaman Preferences kini hanya memiliki satu tab: **General** (tab "API Keys" dihapus — lihat catatan di 3.5.2).
 
 ### 3.5.1 General
 Disusun sebagai section bertumpuk dalam kartu `#602F4B`, tiap section punya tombol *Save* sendiri (kecuali dinyatakan lain).
@@ -372,16 +373,10 @@ Disusun sebagai section bertumpuk dalam kartu `#602F4B`, tiap section punya tomb
 | **Scan History** | (a) Retensi riwayat: 30 hari / 90 hari / 1 tahun / Selamanya (default 90 hari), (b) tombol **Export CSV**, (c) tombol **Clear All History** (danger, konfirmasi dengan mengetik `DELETE`) | Job pembersihan harian menghapus data melewati retensi |
 | **Danger Zone (S)** | Delete Account (konfirmasi password/ketik username) | Menghapus semua data pengguna |
 
-### 3.5.2 API Keys
-| ID | Requirement | P |
-|---|---|---|
-| FR-KEY-01 | Field **VirusTotal API Key** (input password-style) dengan **ikon mata (show/hide)** di dalam input sisi kanan; ikon berganti `eye` / `eye-off`, `aria-label` dinamis, `aria-pressed` | M |
-| FR-KEY-02 | Validasi format: 64 karakter heksadesimal (`^[a-f0-9]{64}$`) | M |
-| FR-KEY-03 | Tombol **Save API Key** (primer) dan **Test Key** (sekunder). Test memanggil VT lewat backend; hasil: valid / tidak valid / kuota habis | M |
-| FR-KEY-04 | Setelah tersimpan, key **tidak pernah dikirim ulang ke browser**. Tampilan: `••••••••••••••••••••••••` + 4 karakter terakhir. Show/hide hanya berlaku untuk teks yang sedang diketik | M |
-| FR-KEY-05 | Tombol **Remove API Key** (konfirmasi) | M |
-| FR-KEY-06 | Teks bantuan + tautan "Dapatkan API Key gratis di virustotal.com" dan info batas free tier (4 request/menit, 500/hari) | M |
-| FR-KEY-07 | Key disimpan terenkripsi AES-256-GCM (lihat 8.3) | M |
+### 3.5.2 API Keys (Dihapus — v1.2)
+> **Catatan:** permukaan API Key per pengguna **dihapus** dari UI client pada v1.2. Pengguna tidak lagi memasukkan, menguji, atau menghapus API Key pribadi. Backend tetap menyelesaikan kunci pemindaian melalui `SYSTEM_VT_API_KEY` (fallback), sehingga pemindaian tetap berjalan. Endpoint backend `/api/settings/api-key*` dan `ApiKeyService` **tetap ada** untuk mendukung resolusi kunci, tetapi tidak lagi diekspos di antarmuka.
+
+*(FR-KEY-01 … FR-KEY-07 pada v1.1 dihapus dan tidak lagi berlaku.)*
 
 ---
 
@@ -467,7 +462,7 @@ theme: { extend: { colors: {
 - **Base URL:** `https://www.virustotal.com/api/v3`
 - **Autentikasi:** header `x-apikey: <API_KEY>` pada setiap request.
 - **Pemanggilan hanya dari backend Express** (`server/`). Browser (React) tidak pernah menghubungi VT langsung dan tidak pernah menerima API Key; klien hanya memanggil endpoint internal Cyber Claw (bagian 6.2).
-- **Pemilihan key:** (1) API Key milik pengguna (terdekripsi di server); (2) jika tidak ada, `SYSTEM_VT_API_KEY` dari env (opsional, dengan kuota harian per pengguna); (3) jika keduanya tidak ada → error `NO_API_KEY`.
+- **Pemilihan key:** (1) API Key milik pengguna jika masih tersimpan (warisan v1.1, terdekripsi di server); (2) jika tidak ada, `SYSTEM_VT_API_KEY` dari env (fallback untuk semua pengguna); (3) jika keduanya tidak ada → demo mode / error `NO_API_KEY`. Sejak v1.2 UI tidak lagi mengekspos pengelolaan API Key pribadi, sehingga praktis semua pemindaian memakai `SYSTEM_VT_API_KEY`.
 - **Timeout HTTP:** 30 detik (upload: 120 detik). Retry otomatis 2× (backoff 1 s, 3 s) hanya untuk 5xx/jaringan pada request idempoten (GET).
 - Respons VT berformat JSON:API-like: `{ "data": { "id", "type", "attributes", "links" }, "meta": {...} }`; error: `{ "error": { "code", "message" } }`.
 
@@ -580,7 +575,7 @@ Simpan juga payload mentah ringkas (`raw_payload`, JSONB, dikompresi atau dibata
 
 | Kondisi VT | HTTP | Kode internal | Pesan UI (ID) | Aksi UI |
 |---|---|---|---|---|
-| `WrongCredentialsError` / key salah | 401 | `INVALID_API_KEY` | "API Key tidak valid." | Tombol ke Preferences > API Keys |
+| `WrongCredentialsError` / key salah | 401 | `INVALID_API_KEY` | "API Key tidak valid." | Hubungi admin (key sistem) |
 | `ForbiddenError` | 403 | `FORBIDDEN` | "API Key tidak memiliki izin untuk aksi ini." | — |
 | `NotFoundError` (scan hash) | 404 | `NOT_FOUND` | "Hash tidak ditemukan." | State Not Found |
 | `NotFoundError` (analysis id) | 404 | `ANALYSIS_NOT_FOUND` | "Data analisis tidak ditemukan." | Retry |
@@ -695,10 +690,10 @@ Respons standar:
 | DELETE | `/api/scans` | `scans.routes.ts` | Hapus semua riwayat |
 | GET | `/api/analytics?range=7d\|30d\|90d` | `analytics.routes.ts` | `{ kpi, donut[], daily[], recent[] }` |
 | GET / PUT | `/api/settings` | `settings.routes.ts` | Baca / ubah `user_settings` |
-| GET | `/api/settings/api-key` | `settings.routes.ts` | Hanya `{ hasKey, last4 }` |
-| PUT | `/api/settings/api-key` | `settings.routes.ts` | Simpan key `{ apiKey }` |
-| DELETE | `/api/settings/api-key` | `settings.routes.ts` | Hapus key |
-| POST | `/api/settings/api-key/test` | `settings.routes.ts` | Uji key (dari body atau yang tersimpan) |
+| GET | `/api/settings/api-key` | `settings.routes.ts` | Hanya `{ hasKey, last4 }` — **legacy, tidak dipakai UI sejak v1.2** |
+| PUT | `/api/settings/api-key` | `settings.routes.ts` | Simpan key `{ apiKey }` — **legacy, tidak dipakai UI sejak v1.2** |
+| DELETE | `/api/settings/api-key` | `settings.routes.ts` | Hapus key — **legacy, tidak dipakai UI sejak v1.2** |
+| POST | `/api/settings/api-key/test` | `settings.routes.ts` | Uji key (dari body atau yang tersimpan) — **legacy, tidak dipakai UI sejak v1.2** |
 | GET | `/api/profile/username-available?u=` | `settings.routes.ts` | Cek ketersediaan username (dipakai Sign Up, FR-AUTH-14) |
 
 Catatan implementasi:
@@ -761,7 +756,7 @@ cyber-claw/
 │     │  ├─ ScanPage.tsx            # ScanBuffers + Scan Result
 │     │  ├─ FullReportPage.tsx
 │     │  ├─ AnalyticsPage.tsx
-│     │  ├─ PreferencesPage.tsx     # General + API Keys
+│     │  ├─ PreferencesPage.tsx     # General (saja)
 │     │  ├─ HelpPage.tsx           # Help & Docs (Quick Start + FAQ)
 │     │  ├─ AboutPage.tsx          # About & credits
 │     │  ├─ TermsPage.tsx, NotFoundPage.tsx
@@ -1001,20 +996,20 @@ Pengaturan wajib di aplikasi: `app.set('trust proxy', 1)` (agar IP klien benar d
 | AC-09 | Verdict | `malicious=0,suspicious=0` → Clean; `malicious=1` → Warning; `malicious≥T` → Danger; `suspicious≥1` & malicious=0 → Warning |
 | AC-10 | History | Menampilkan seluruh scan pengguna, urut terbaru, klik membuka hasil |
 | AC-11 | Analytics | Donat & garis konsisten dengan data History pada rentang yang sama |
-| AC-12 | API Key | Disimpan terenkripsi, tak pernah muncul di respons jaringan; ikon show/hide bekerja; Test Key memberi hasil tepat |
+| AC-12 | API Key | (v1.2) UI tidak lagi mengekspos API Key per pengguna; pemindaian memakai `SYSTEM_VT_API_KEY`. Key tidak pernah muncul di respons jaringan/bundel client |
 | AC-13 | Rate limit | 10 scan beruntun tidak menghasilkan error 429 mentah ke pengguna (antre/pesan ramah) |
-| AC-14 | Hamburger menu | Berisi Dashboard, Analytics, Help & Docs, About (dapat dioperasikan keyboard: panah atas/bawah, Home/End, Enter) |
+| AC-14 | Hamburger menu | Berisi label satu kata: Dashboard, Analytics, Preferences, Help, About (dapat dioperasikan keyboard: panah atas/bawah, Home/End, Enter) |
 | AC-15 | Warna | Seluruh warna sesuai token pada 4.1; tidak ada warna di luar palet kecuali variasi opasitas |
 | AC-16 | Responsif | Tidak ada scroll horizontal pada 360px |
 | AC-17 | Keamanan | Pengguna A tidak dapat mengakses `/scan/{id}` milik pengguna B (404/403) |
 | AC-18 | CORS & auth | Request ke `/api/*` dari origin tidak terdaftar ditolak; request tanpa/dengan Bearer token tidak valid mendapat 401 |
-| AC-19 | Deep link SPA | Refresh langsung pada `/scan/{id}/report` dan `/preferences?tab=api-keys` di produksi (Vercel) tetap memuat halaman, bukan 404 |
+| AC-19 | Deep link SPA | Refresh langsung pada `/scan/{id}/report` dan `/preferences?tab=general` di produksi (Vercel) tetap memuat halaman, bukan 404 |
 | AC-20 | Pemisahan secret | Bundel client tidak mengandung `SERVICE_ROLE_KEY`, `ENCRYPTION_KEY`, maupun API Key VT |
 
 ## 9.2 Strategi Pengujian
 - **Unit:** `verdict.ts`, `mappers.ts`, validator hash/URL/password, enkripsi/dekripsi, rate limiter.
 - **Integrasi (server):** Express routes diuji dengan **Supertest** + MSW yang meniru respons VT (200, 401, 404, 429, 5xx, `queued → in-progress → completed`), termasuk uji `requireAuth`, validasi Zod, batas upload 32 MB, dan kepemilikan data.
-- **Komponen (client):** React Testing Library untuk Dropzone, form validasi, HamburgerMenu (termasuk item Help & Docs / About), VendorGrid, halaman HelpPage/AboutPage, dan guard `ProtectedRoute`/`GuestRoute`.
+- **Komponen (client):** React Testing Library untuk Dropzone, form validasi, HamburgerMenu (item satu kata: Dashboard/Analytics/Preferences/Help/About), VendorGrid, halaman HelpPage/AboutPage, dan guard `ProtectedRoute`/`GuestRoute`.
 - **E2E (Playwright):** alur A–F pada bagian 2.2.
 - **Aksesibilitas:** axe-core pada halaman utama.
 - **Manual:** uji dengan file EICAR (file uji standar antivirus, aman) dan URL uji yang dikenal.
@@ -1051,7 +1046,7 @@ Fitur dianggap selesai bila: memenuhi FR terkait, lolos AC terkait, lint & typec
 | Kualitas kode AI-generated | Bug/celah | Code review manual, tes otomatis, lint ketat |
 
 ## 10.2 Asumsi
-1. Pengguna memiliki/memperoleh API Key VT sendiri, atau admin menyediakan `SYSTEM_VT_API_KEY`.
+1. Admin menyediakan `SYSTEM_VT_API_KEY` (sejak v1.2 ini jalur utama; API Key per pengguna tidak lagi diekspos di UI).
 2. Pengguna menerima bahwa file/URL dikirim ke VirusTotal.
 3. Bahasa awal UI adalah Indonesia; teks Inggris tersedia untuk semua string.
 4. Aplikasi digunakan untuk tujuan edukasi/non-komersial.
