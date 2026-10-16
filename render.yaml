@@ -1,0 +1,28 @@
+# Render Blueprint — Cyber Claw backend (Express API)
+# Deploy: Render Dashboard -> New -> Blueprint -> pick this repo.
+# Set the secret env vars in the dashboard (they are marked sync: false).
+services:
+  - type: web
+    name: cyberclaw-api
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm ci && npm run build
+    startCommand: node dist/index.js
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        sync: false
+      - key: CLIENT_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SYSTEM_VT_API_KEY
+        sync: false
