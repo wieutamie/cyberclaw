@@ -39,10 +39,13 @@ export class HistoryService {
         query = query.range(offset, offset + pageSize - 1);
 
         const { data, count, error } = await query;
-        if (!error && data && data.length > 0) {
+        // Only fall back to memoryStore on a REAL query error. An empty result
+        // is a valid answer (e.g. the user just deleted everything) and must
+        // NOT be overridden by stale in-memory scans.
+        if (!error) {
           return {
-            items: data as ScanRecord[],
-            total: count || data.length,
+            items: (data || []) as ScanRecord[],
+            total: count ?? (data ? data.length : 0),
             page,
             pageSize,
           };
@@ -79,32 +82,38 @@ export class HistoryService {
   }
 
   static async deleteScan(userId: string, scanId: string): Promise<boolean> {
+    // Always purge the in-memory copy first. getHistory() can fall back to
+    // memoryStore, so a scan that is only removed from Supabase would "come
+    // back from the dead" on the next read. Both stores must stay in sync.
+    let deleted = false;
+    const memScan = memoryStore.scans.get(scanId);
+    if (memScan && memScan.user_id === userId) {
+      memoryStore.scans.delete(scanId);
+      deleted = true;
+    }
+
     if (supabase) {
       const { error } = await supabase
         .from('scans')
         .delete()
         .eq('id', scanId)
         .eq('user_id', userId);
-      return !error;
-    } else {
-      const scan = memoryStore.scans.get(scanId);
-      if (scan && scan.user_id === userId) {
-        memoryStore.scans.delete(scanId);
-        return true;
-      }
-      return false;
+      if (!error) deleted = true;
     }
+
+    return deleted;
   }
 
   static async clearAllHistory(userId: string): Promise<void> {
+    // Purge BOTH stores — see deleteScan() for why.
+    for (const [id, scan] of memoryStore.scans.entries()) {
+      if (scan.user_id === userId) {
+        memoryStore.scans.delete(id);
+      }
+    }
+
     if (supabase) {
       await supabase.from('scans').delete().eq('user_id', userId);
-    } else {
-      for (const [id, scan] of memoryStore.scans.entries()) {
-        if (scan.user_id === userId) {
-          memoryStore.scans.delete(id);
-        }
-      }
     }
   }
 

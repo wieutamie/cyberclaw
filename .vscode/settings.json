@@ -5,5 +5,6 @@
   "tailwindCSS.experimental.configFile": "client/tailwind.config.ts",
   "files.associations": {
     "*.css": "tailwindcss"
-  }
+  },
+  "json.schemaDownload.enable": false
 }

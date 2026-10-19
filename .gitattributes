@@ -1,0 +1,16 @@
+# Normalize line endings so diffs never bloat from CRLF/LF churn.
+* text=auto eol=lf
+
+# Binary assets — never touch
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.doc binary
+*.docx binary
+
+# Keep lockfiles as-is
+package-lock.json -text

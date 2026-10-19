@@ -62,6 +62,18 @@ export function errorHandler(
     });
   }
 
+  // Malformed JSON body: body-parser throws a SyntaxError with
+  // `type: 'entity.parse.failed'`. This is a client error (400), not a 500.
+  if (err?.type === 'entity.parse.failed' || (err instanceof SyntaxError && 'body' in err)) {
+    return res.status(400).json({
+      ok: false,
+      error: {
+        code: 'INVALID_JSON',
+        message: 'Request body is not valid JSON.',
+      },
+    });
+  }
+
   if (err.code === 'LIMIT_FILE_SIZE') {
     return res.status(400).json({
       ok: false,

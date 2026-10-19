@@ -14,6 +14,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { formatDateTime, formatBytes, truncate } from '../../lib/format.js';
+import { totalEngines } from '../../lib/stats.js';
 import { useSettings } from '../../context/SettingsContext.js';
 import { ScanRecord } from '../../types/index.js';
 import { api } from '../../lib/api.js';
@@ -41,8 +42,7 @@ export const SummaryPanel: React.FC<SummaryPanelProps> = ({ scan, onRescanSucces
     unsupported: 0,
   };
 
-  const totalEngines =
-    stats.malicious + stats.suspicious + stats.harmless + stats.undetected;
+  const totalEnginesCount = totalEngines(stats);
 
   const handleCopy = (field: string, text: string) => {
     navigator.clipboard.writeText(text);
@@ -124,7 +124,7 @@ export const SummaryPanel: React.FC<SummaryPanelProps> = ({ scan, onRescanSucces
               {scan.verdict || 'Scan Result'}
             </h3>
             <span className="text-xs text-muted">
-              {totalEngines} Security Vendors
+              {totalEnginesCount} Security Vendors
             </span>
           </div>
         </div>
@@ -134,7 +134,7 @@ export const SummaryPanel: React.FC<SummaryPanelProps> = ({ scan, onRescanSucces
             <span className={stats.malicious > 0 ? 'text-status-danger' : 'text-status-clean'}>
               {stats.malicious}
             </span>
-            <span className="text-muted text-sm"> / {totalEngines}</span>
+            <span className="text-muted text-sm"> / {totalEnginesCount}</span>
           </span>
         </div>
       </div>
@@ -154,7 +154,7 @@ export const SummaryPanel: React.FC<SummaryPanelProps> = ({ scan, onRescanSucces
                   <div
                     className={`h-full rounded-full ${s.color}`}
                     style={{
-                      width: totalEngines > 0 ? `${(s.val / totalEngines) * 100}%` : '0%',
+                      width: totalEnginesCount > 0 ? `${(s.val / totalEnginesCount) * 100}%` : '0%',
                     }}
                   />
                 </div>

@@ -32,7 +32,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`flex items-center gap-3 ${className}`}>
+    <div className={`flex items-center gap-2 ${className}`}>
       {/* Logo mark */}
       <img
         src="/LogoCC.svg"
@@ -68,7 +68,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
         )}
 
         {showTagline && (
-          <span className="text-xs sm:text-sm font-semibold text-white/85 mt-1 whitespace-nowrap tracking-wide">
+          <span className="text-[10px] sm:text-xs font-semibold text-white/85 mt-0.5 whitespace-nowrap tracking-wide">
             Security Inspector via VirusTotal API v3
           </span>
         )}

@@ -10,8 +10,10 @@ import {
   FileSearch,
   ArrowLeft,
   ExternalLink,
+  AlertTriangle,
 } from 'lucide-react';
 import { formatDateTime, formatBytes, truncate } from '../../lib/format.js';
+import { totalEngines } from '../../lib/stats.js';
 import { playCatSound } from '../../lib/catSounds.js';
 import { useSettings } from '../../context/SettingsContext.js';
 import { ScanRecord } from '../../types/index.js';
@@ -59,9 +61,8 @@ export const ResultCard: React.FC<ResultCardProps> = ({ scan, onScanAnother }) =
     unsupported: 0,
   };
 
-  const totalEngines =
-    stats.malicious + stats.suspicious + stats.harmless + stats.undetected;
-  const ratioPercent = totalEngines > 0 ? (stats.malicious / totalEngines) * 100 : 0;
+  const totalEnginesCount = totalEngines(stats);
+  const ratioPercent = totalEnginesCount > 0 ? (stats.malicious / totalEnginesCount) * 100 : 0;
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -108,10 +109,48 @@ export const ResultCard: React.FC<ResultCardProps> = ({ scan, onScanAnother }) =
     );
   }
 
+  // State: Failed (real upstream error — no fabricated result)
+  if (scan.state === 'failed') {
+    return (
+      <div className="w-full max-w-[860px] mx-auto bg-surface border-2 border-status-danger/60 rounded-card p-6 sm:p-8 shadow-card flex flex-col items-center text-center animate-in zoom-in-95 duration-200">
+        <div className="w-20 h-20 rounded-full bg-status-danger/20 text-status-danger flex items-center justify-center mb-4">
+          <AlertTriangle className="w-12 h-12" />
+        </div>
+
+        <h2 className="text-2xl font-bold text-white mb-2">
+          {t('scan.scanFailedTitle')}
+        </h2>
+        <p className="text-sm text-gray-300 max-w-md mb-6 leading-relaxed">
+          {t('scan.scanFailedDesc')}
+        </p>
+
+        <div className="w-full p-4 rounded-xl bg-surface-alt font-mono text-xs text-muted break-all mb-6">
+          {scan.item_label}
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3 w-full">
+          <button
+            onClick={onScanAnother}
+            className="flex-1 py-3 px-4 rounded-btn bg-brand hover:bg-brand-accent text-white font-bold text-sm shadow-soft transition-all flex items-center justify-center gap-2"
+          >
+            <RotateCcw className="w-4 h-4" />
+            <span>{t('scan.retryScan')}</span>
+          </button>
+          <button
+            onClick={() => navigate('/dashboard?tab=history')}
+            className="flex-1 py-3 px-4 rounded-btn bg-surface-alt border border-brand-accent text-white font-semibold text-sm hover:bg-brand-accent transition-all flex items-center justify-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>{t('scan.viewInHistory')}</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Verdict configs
   const isDanger = scan.verdict === 'danger';
   const isWarning = scan.verdict === 'warning';
-
   // Verdict styling (per PRD §4.1): distinct semantic colors — danger #FF0000,
   // warning #FF7300, clean #11FF00. No glow. Clean text is dark ink so it stays
   // legible on the bright green.
@@ -134,7 +173,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ scan, onScanAnother }) =
     : t('scan.verdictClean');
 
   const verdictDesc = isDanger
-    ? t('scan.verdictDangerDesc', { count: stats.malicious, total: totalEngines })
+    ? t('scan.verdictDangerDesc', { count: stats.malicious, total: totalEnginesCount })
     : isWarning
     ? t('scan.verdictWarningDesc')
     : t('scan.verdictCleanDesc');
@@ -149,10 +188,15 @@ export const ResultCard: React.FC<ResultCardProps> = ({ scan, onScanAnother }) =
   const itemSha256 = scan.item_sha256 || scan.item_meta?.sha256;
 
   // Donut chart data (per PRD §4.1): danger #FF0000, warning #FF7300,
-  // clean #11FF00. "Other" (undetected/timeout/failure) uses a muted neutral —
-  // intentionally NOT green, so an unknown result is never mistaken for "safe".
-  // Only non-zero slices are plotted.
-  const otherCount = stats.undetected + (stats.timeout || 0) + (stats.failure || 0);
+  // clean #11FF00. "Other" (undetected/timeout/failure/type-unsupported) uses a
+  // muted neutral — intentionally NOT green, so an unknown result is never
+  // mistaken for "safe". Includes every non-big-four category so the buckets
+  // always sum to the full engine count (71). Only non-zero slices are plotted.
+  const otherCount =
+    stats.undetected +
+    (stats.timeout || 0) +
+    (stats.failure || 0) +
+    (stats.unsupported || 0);
   const donutData = [
     { name: t('scan.verdictDanger'), value: stats.malicious, color: '#FF0000' },
     { name: t('scan.verdictWarning'), value: stats.suspicious, color: '#FF7300' },
@@ -289,7 +333,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ scan, onScanAnother }) =
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       const d = payload[0].payload as { name: string; value: number; color: string };
-                      const pct = totalEngines > 0 ? ((d.value / totalEngines) * 100).toFixed(1) : '0.0';
+                      const pct = totalEnginesCount > 0 ? ((d.value / totalEnginesCount) * 100).toFixed(1) : '0.0';
                       return (
                         <div className="bg-surface-alt border border-surface px-3 py-1.5 rounded-lg shadow-lg text-xs">
                           <span className="font-semibold" style={{ color: d.color }}>
@@ -355,7 +399,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ scan, onScanAnother }) =
               <div className="bg-surface-alt px-4 py-3 text-center">
                 <div className="text-white text-sm font-normal">
                   <span className="font-bold">{card.count}</span>
-                  <span className="text-white/70"> / {totalEngines} Vendor</span>
+                  <span className="text-white/70"> / {totalEnginesCount} Vendor</span>
                 </div>
                 <p className="text-white text-[10px] leading-snug mt-1.5">{card.desc}</p>
               </div>

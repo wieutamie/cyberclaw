@@ -13,7 +13,7 @@ export const Header: React.FC = () => {
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/25" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-b from-transparent to-black/15" />
 
-      <div className="relative max-w-[1480px] mx-auto h-24 sm:h-32 flex items-center justify-between gap-4">
+      <div className="relative max-w-[1480px] mx-auto h-20 sm:h-24 flex items-center justify-between gap-4">
         {/* Left: Brand lockup — big mark beside a stacked CYBER/CLAW wordmark
             with the tagline tucked close under CLAW, matching the mockup header. */}
         <Link
@@ -24,22 +24,13 @@ export const Header: React.FC = () => {
           <BrandLogo
             stacked
             showTagline
-            markClassName="w-[76px] h-16 sm:w-[104px] sm:h-[88px] transition-transform duration-300 group-hover:rotate-[-6deg] group-hover:scale-105"
-            wordClassName="text-3xl sm:text-4xl"
+            markClassName="w-[64px] h-[54px] sm:w-[88px] sm:h-[74px] transition-transform duration-300 group-hover:rotate-[-6deg] group-hover:scale-105"
+            wordClassName="text-2xl sm:text-[28px]"
           />
         </Link>
 
-        {/* Right: live status chip + menu */}
+        {/* Right: menu */}
         <div className="flex items-center gap-3 relative">
-          {/* Live "engine online" indicator — a subtle sign the app is alive */}
-          <span className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/20 border border-white/15 text-[11px] font-semibold text-white/90 backdrop-blur-sm">
-            <span className="relative flex w-2 h-2">
-              <span className="absolute inline-flex w-2 h-2 rounded-full bg-white/70 animate-live-dot" />
-              <span className="relative inline-flex w-2 h-2 rounded-full bg-white" />
-            </span>
-            <span className="tracking-wide">Engines online</span>
-          </span>
-
           {/* Hamburger: buka saat hover, tetap bisa diklik (sentuh/keyboard). */}
           <div
             className="relative"

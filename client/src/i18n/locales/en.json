@@ -6,7 +6,7 @@
     "analytics": "Analytics",
     "preferences": "Preferences",
     "about": "About",
-    "help": "Help",
+    "help": "Documentation",
     "signOut": "Sign Out",
     "signIn": "Sign In",
     "signUp": "Sign Up",
@@ -66,7 +66,7 @@
     "helpLink": "Visit Help & Docs"
   },
   "help": {
-    "title": "Help & Documentation",
+    "title": "Documentation",
     "subtitle": "Official VirusTotal API v3 docs used by Cyber Claw",
     "introTitle": "Official VirusTotal API v3 Documentation",
     "introDesc": "Cyber Claw uses the VirusTotal API v3 to scan files, URLs, and hashes. This page summarizes the key topics and links each one to the official VirusTotal documentation so you always get the latest information.",
@@ -123,8 +123,8 @@
     "passwordRequirements": "Min 8 characters, at least 1 uppercase, 1 lowercase, 1 number."
   },
   "dashboard": {
-    "heroTitle": "Smart scanning with VirusTotal integration",
-    "heroDesc": "Simply drop your files into the container on the right. Cyber Claw will handle deep malware detection and threat analysis using global security standards.",
+    "heroTitle": "Smart scanning with\nVirusTotal integration",
+    "heroDesc": "Simply drop your files into the container on the right. Cyber Claw will handle deep malware detection and threat analysis using global security standards, so you can browse, download, and share files with confidence.",
     "submitDisclaimer": "By submitting data, you agree to our Terms of Service and Privacy Policy, and allow your submissions to be shared with the security community. Please do not submit any personal or sensitive information.",
     "disclaimer": "Analysis results are indicative based on active vendor definitions; not an absolute guarantee of security.",
     "tabFile": "Scan File",
@@ -178,7 +178,12 @@
     "cardWarningDesc": "File is mostly safe, but there are some suspicious detections.",
     "cardCleanDesc": "The file exhibits normal behavior and contains no known threats.",
     "cardUndetectedDesc": "Undetected by all vendors, bypassing signature-based detection.",
-    "scanFileCta": "Scan File Directly"
+    "scanFileCta": "Scan File Directly",
+    "scanFailedTitle": "Scan Failed",
+    "scanFailedDesc": "We could not complete this scan because the scanning service returned an error. No results were fabricated. Please try again.",
+    "retryScan": "Retry Scan",
+    "notConfiguredTitle": "Scanning service not configured",
+    "notConfiguredDesc": "The server is missing a VirusTotal API key. Scanning is unavailable until an administrator configures SYSTEM_VT_API_KEY."
   },
   "report": {
     "title": "Vendor Analysis Report",

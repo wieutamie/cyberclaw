@@ -6,7 +6,7 @@
     "analytics": "Analytics",
     "preferences": "Preferences",
     "about": "Tentang",
-    "help": "Bantuan",
+    "help": "Dokumentasi",
     "signOut": "Sign Out",
     "signIn": "Sign In",
     "signUp": "Sign Up",
@@ -66,7 +66,7 @@
     "helpLink": "Buka Bantuan & Dokumen"
   },
   "help": {
-    "title": "Bantuan & Dokumentasi",
+    "title": "Dokumentasi",
     "subtitle": "Panduan resmi VirusTotal API v3 yang dipakai Cyber Claw",
     "introTitle": "Dokumentasi Resmi VirusTotal API v3",
     "introDesc": "Cyber Claw memakai VirusTotal API v3 untuk memindai file, URL, dan hash. Halaman ini merangkum topik utama dan mengarahkan setiap topik ke dokumentasi resmi VirusTotal agar Anda selalu mendapat informasi terbaru.",
@@ -123,8 +123,8 @@
     "passwordRequirements": "Minimal 8 karakter, 1 huruf besar, 1 huruf kecil, 1 angka."
   },
   "dashboard": {
-    "heroTitle": "Pemindaian cerdas dengan integrasi VirusTotal",
-    "heroDesc": "Cukup letakkan file Anda ke dalam wadah di sebelah kanan. Cyber Claw akan melakukan deteksi malware mendalam dan analisis ancaman dengan standar keamanan global.",
+    "heroTitle": "Pemindaian cerdas dengan\nintegrasi VirusTotal",
+    "heroDesc": "Cukup letakkan file Anda ke dalam wadah di sebelah kanan. Cyber Claw akan melakukan deteksi malware mendalam dan analisis ancaman dengan standar keamanan global, sehingga Anda dapat menjelajah, mengunduh, dan berbagi file dengan lebih percaya diri.",
     "submitDisclaimer": "Dengan mengirimkan data, Anda menyetujui Ketentuan Layanan dan Kebijakan Privasi kami, serta mengizinkan kiriman Anda dibagikan kepada komunitas keamanan. Mohon jangan mengirimkan informasi pribadi atau sensitif.",
     "disclaimer": "Hasil analisis bersifat indikatif berdasarkan vendor VirusTotal saat ini; bukan jaminan keamanan 100%.",
     "tabFile": "Scan File",
@@ -178,7 +178,12 @@
     "cardWarningDesc": "File sebagian besar aman, namun ada beberapa deteksi mencurigakan.",
     "cardCleanDesc": "File berperilaku normal dan tidak mengandung ancaman yang diketahui.",
     "cardUndetectedDesc": "Tak terdeteksi oleh semua vendor, melewati deteksi berbasis signature.",
-    "scanFileCta": "Scan File Langsung"
+    "scanFileCta": "Scan File Langsung",
+    "scanFailedTitle": "Pemindaian Gagal",
+    "scanFailedDesc": "Pemindaian tidak dapat diselesaikan karena layanan pemindaian mengembalikan error. Tidak ada hasil yang dibuat-buat. Silakan coba lagi.",
+    "retryScan": "Coba Lagi",
+    "notConfiguredTitle": "Layanan pemindaian belum dikonfigurasi",
+    "notConfiguredDesc": "Server belum memiliki API key VirusTotal. Pemindaian tidak tersedia sampai administrator mengatur SYSTEM_VT_API_KEY."
   },
   "report": {
     "title": "Laporan Analisis Vendor",

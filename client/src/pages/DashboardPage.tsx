@@ -113,14 +113,14 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="relative py-2 lg:py-4">
-      <div className="relative grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
+    <div className="relative flex-1 flex flex-col justify-center py-2 lg:py-4">
+      <div className="relative grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
         {/* Left: hero copy — balanced ~50:50 with the scanner panel */}
         <section className="lg:col-span-6 flex flex-col justify-center gap-4 lg:gap-5 animate-fade-rise order-2 lg:order-1">
-          <h1 className="font-display text-3xl sm:text-4xl font-extrabold text-white leading-tight">
+          <h1 className="font-display text-3xl sm:text-4xl lg:text-[2.6rem] font-extrabold text-white leading-tight whitespace-pre-line">
             {t('dashboard.heroTitle')}
           </h1>
-          <p className="text-sm sm:text-base text-gray-300 leading-relaxed max-w-md">
+          <p className="text-sm sm:text-base text-gray-300 leading-relaxed max-w-md text-justify">
             {t('dashboard.heroDesc')}
           </p>
         </section>

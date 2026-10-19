@@ -5,7 +5,28 @@ import { vtClient } from '../lib/virustotal/client.js';
 import { ApiKeyRecord } from '../types/index.js';
 
 export class ApiKeyService {
+  /**
+   * Short-lived cache of resolved keys.
+   *
+   * The scan page polls `/scans/:id/status` every ~1.2s, and each poll resolves
+   * the key — which without this cache meant a Supabase round-trip per poll on
+   * top of the actual VirusTotal call. A 60s TTL keeps that off the hot path
+   * while still picking up a newly-saved key almost immediately.
+   */
+  private static keyCache = new Map<string, { key: string | null; at: number }>();
+  private static readonly KEY_CACHE_TTL_MS = 60_000;
+
+  private static cacheKey(userId: string, key: string | null): string | null {
+    this.keyCache.set(userId, { key, at: Date.now() });
+    return key;
+  }
+
   static async getUserApiKey(userId: string): Promise<string | null> {
+    const cached = this.keyCache.get(userId);
+    if (cached && Date.now() - cached.at < this.KEY_CACHE_TTL_MS) {
+      return cached.key;
+    }
+
     // 1. Check user key
     if (supabase) {
       const { data, error } = await supabase
@@ -16,7 +37,7 @@ export class ApiKeyService {
 
       if (!error && data?.encrypted_key) {
         try {
-          return decrypt(data.encrypted_key);
+          return this.cacheKey(userId, decrypt(data.encrypted_key));
         } catch {
           // decryption failed
         }
@@ -25,7 +46,7 @@ export class ApiKeyService {
       const record = memoryStore.apiKeys.get(userId);
       if (record?.encrypted_key) {
         try {
-          return decrypt(record.encrypted_key);
+          return this.cacheKey(userId, decrypt(record.encrypted_key));
         } catch {
           // decryption failed
         }
@@ -34,10 +55,10 @@ export class ApiKeyService {
 
     // 2. Fallback to system key if provided
     if (env.SYSTEM_VT_API_KEY) {
-      return env.SYSTEM_VT_API_KEY;
+      return this.cacheKey(userId, env.SYSTEM_VT_API_KEY);
     }
 
-    return null;
+    return this.cacheKey(userId, null);
   }
 
   static async getKeyMetadata(
@@ -72,6 +93,7 @@ export class ApiKeyService {
     const encrypted = encrypt(rawKey);
     const last4 = rawKey.slice(-4);
     const now = new Date().toISOString();
+    this.keyCache.delete(userId);
 
     if (supabase) {
       const { error } = await supabase.from('api_keys').upsert({
@@ -100,6 +122,7 @@ export class ApiKeyService {
   }
 
   static async removeApiKey(userId: string): Promise<void> {
+    this.keyCache.delete(userId);
     if (supabase) {
       await supabase.from('api_keys').delete().eq('user_id', userId);
     } else {

@@ -73,4 +73,35 @@ describe('undetected dihitung CLEAN', () => {
     expect(stats.undetected).toBe(68);
     expect(stats.malicious + stats.suspicious + stats.harmless + stats.undetected).toBe(71);
   });
+
+  it('stats.total SELALU 71 dan cocok dengan jumlah kartu vendor (regression)', () => {
+    // Skenario nyata EICAR: VT melaporkan 66 malicious di SELURUH engine,
+    // tetapi hanya 47 di antaranya berada di daftar kanon 71. Statistik HARUS
+    // diturunkan dari daftar kanon, bukan dari last_analysis_stats mentah,
+    // agar tidak ada angka yang melebihi jumlah engine yang ditampilkan.
+    const rawResults: Record<string, { engine_name: string; category: string }> = {};
+    CANONICAL_VENDORS.forEach((name, i) => {
+      rawResults[name] = {
+        engine_name: name,
+        category: i < 47 ? 'malicious' : i < 52 ? 'type-unsupported' : 'undetected',
+      };
+    });
+    const vendors = mapVendorResults(rawResults as any);
+    const stats = aggregateStats(vendors);
+
+    const maliciousCards = vendors.filter((v) => v.category === 'malicious').length;
+    expect(stats.malicious).toBe(maliciousCards);
+    expect(stats.malicious).toBe(47);
+
+    const total =
+      stats.malicious +
+      stats.suspicious +
+      stats.harmless +
+      stats.undetected +
+      stats.timeout +
+      stats.failure +
+      stats.unsupported;
+    expect(total).toBe(71);
+    expect(vendors).toHaveLength(71);
+  });
 });

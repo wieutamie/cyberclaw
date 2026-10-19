@@ -66,7 +66,7 @@ vercel env add ENCRYPTION_KEY production  # node -e "console.log(require('crypto
 vercel env add JWT_SECRET production      # node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
 vercel env add CRON_SECRET production     # node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 vercel env add MAX_UPLOAD_MB production   # 4
-# opsional:
+# WAJIB: tanpa kunci ini pemindaian gagal dengan SCAN_NOT_CONFIGURED (tidak ada mode demo/mock)
 vercel env add SYSTEM_VT_API_KEY production
 vercel --prod
 ```

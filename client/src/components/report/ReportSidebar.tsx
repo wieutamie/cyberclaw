@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ScanRecord, ScanStats } from '../../types/index.js';
+import { totalEngines } from '../../lib/stats.js';
 
 interface ReportSidebarProps {
   scan: ScanRecord;
@@ -35,10 +36,9 @@ export const ReportSidebar: React.FC<ReportSidebarProps> = ({ scan }) => {
   const vendors = scan.vendor_results || [];
   const stats = scan.stats || EMPTY_STATS;
 
-  const totalEngines =
-    stats.malicious + stats.suspicious + stats.harmless + stats.undetected;
+  const totalEnginesCount = totalEngines(stats);
   const detected = stats.malicious + stats.suspicious;
-  const detectedPercent = totalEngines > 0 ? Math.round((detected / totalEngines) * 100) : 0;
+  const detectedPercent = totalEnginesCount > 0 ? Math.round((detected / totalEnginesCount) * 100) : 0;
 
   // The mockup surfaces a few "safe looking" engines as a quick reassurance list.
   const miniRows: MiniRow[] = useMemo(() => {
@@ -89,7 +89,7 @@ export const ReportSidebar: React.FC<ReportSidebarProps> = ({ scan }) => {
           </div>
           <div className="bg-bg px-3 py-2.5 text-center">
             <div className="text-white text-sm font-bold">
-              {dangerCount} / {totalEngines} Vendor
+              {dangerCount} / {totalEnginesCount} Vendor
             </div>
             <p className="mt-1 text-[9px] leading-tight text-muted">
               File with malicious files detected. Guarantee strongly updated
@@ -105,7 +105,7 @@ export const ReportSidebar: React.FC<ReportSidebarProps> = ({ scan }) => {
           </div>
           <div className="bg-bg px-3 py-2.5 text-center">
             <div className="text-white text-sm font-bold">
-              {warningCount} / {totalEngines} Vendor
+              {warningCount} / {totalEnginesCount} Vendor
             </div>
             <p className="mt-1 text-[9px] leading-tight text-muted">
               File is very suspicious, but there are some unknown detection
@@ -159,7 +159,7 @@ export const ReportSidebar: React.FC<ReportSidebarProps> = ({ scan }) => {
           </div>
           <div className="bg-bg px-3 py-2.5 text-center">
             <div className="text-white text-sm font-bold">
-              {stats.harmless} / {totalEngines} Vendor
+              {stats.harmless} / {totalEnginesCount} Vendor
             </div>
             <p className="mt-1 text-[9px] leading-tight text-muted">
               File with no harmful behaviour and contains no known threats
@@ -175,7 +175,7 @@ export const ReportSidebar: React.FC<ReportSidebarProps> = ({ scan }) => {
           </div>
           <div className="bg-bg px-3 py-2.5 text-center">
             <div className="text-white text-sm font-bold">
-              {stats.undetected} / {totalEngines} Vendor
+              {stats.undetected} / {totalEnginesCount} Vendor
             </div>
             <p className="mt-1 text-[9px] leading-tight text-muted">
               Undetected by vendors supporting signature-based detection

@@ -4,9 +4,9 @@ import { Header } from './Header.js';
 
 export const AppLayout: React.FC = () => {
   return (
-    <div className="app-shell flex flex-col text-white">
+    <div className="app-shell flex flex-col text-white min-h-[100dvh]">
       <Header />
-      <main className="flex-1 w-full max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-9">
+      <main className="flex-1 min-h-0 flex flex-col w-full max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7">
         <Outlet />
       </main>
       <footer className="w-full py-7 px-6 text-center text-[11px] text-slate-500 leading-relaxed">

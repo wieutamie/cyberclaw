@@ -111,19 +111,19 @@ export function mapVendorResults(
 }
 
 /**
- * Menyusun stats dari daftar vendor kanon sehingga konsisten dengan hasil
- * `mapVendorResults` (jumlah engine = 71). `undetected`/`harmless`/dll. sudah
- * termasuk di dalam 71 sehingga tidak akan ada engine yang "hilang".
+ * Menyusun stats HANYA dari daftar vendor kanon (71 engine) sehingga angka pada
+ * kartu statistik SELALU konsisten dengan daftar vendor yang ditampilkan.
  *
- * `malicious` dan `suspicious` diambil dari stats mentah VT bila tersedia
- * (lebih akurat, termasuk engine di luar kanon), lalu dilengkapi hasil dari
- * daftar kanon sebagai fallback.
+ * PENTING: `last_analysis_stats` mentah dari VT menghitung SELURUH engine
+ * (termasuk yang di luar daftar kanon). Menyatukannya (mis. `Math.max`) membuat
+ * `stats.malicious` bisa jauh lebih besar daripada jumlah kartu vendor
+ * `malicious` yang benar-benar ditampilkan, dan total seluruh kategori bisa
+ * melebihi 71 (mis. 66 malicious + 19 undetected + 5 unsupported = 90). Karena
+ * itu stats diturunkan murni dari `vendor_results`; jumlah seluruh kategori
+ * dijamin tepat sama dengan jumlah vendor kanon (71).
  */
-export function aggregateStats(
-  vendors: VendorResult[],
-  rawStats?: RawStats
-): ScanStats {
-  const fromVendors = vendors.reduce(
+export function aggregateStats(vendors: VendorResult[]): ScanStats {
+  return vendors.reduce(
     (acc, v) => {
       if (v.category === 'malicious') acc.malicious += 1;
       else if (v.category === 'suspicious') acc.suspicious += 1;
@@ -145,16 +145,5 @@ export function aggregateStats(
       unsupported: 0,
     } as ScanStats
   );
-
-  const raw = rawStats || {};
-  return {
-    malicious: Math.max(fromVendors.malicious, raw.malicious || 0),
-    suspicious: Math.max(fromVendors.suspicious, raw.suspicious || 0),
-    harmless: fromVendors.harmless,
-    undetected: fromVendors.undetected,
-    timeout: fromVendors.timeout,
-    failure: fromVendors.failure,
-    unsupported: fromVendors.unsupported,
-  };
 }
 

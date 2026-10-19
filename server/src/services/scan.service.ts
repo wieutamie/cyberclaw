@@ -3,88 +3,67 @@ import { supabase, memoryStore } from '../lib/supabase.js';
 import { vtClient, VirusTotalError } from '../lib/virustotal/client.js';
 import { mapVendorResults, aggregateStats } from '../lib/virustotal/mappers.js';
 import { calculateVerdict } from '../lib/virustotal/verdict.js';
-import { CANONICAL_VENDORS } from '../lib/virustotal/vendors.js';
 import { ApiKeyService } from './apiKey.service.js';
 import { SettingsService } from './settings.service.js';
 import { AppError } from '../middleware/errorHandler.js';
-import { ScanRecord, ScanType, ScanStats, VendorResult } from '../types/index.js';
+import { ScanRecord } from '../types/index.js';
 import { logger } from '../lib/logger.js';
 
 export class ScanService {
+  /**
+   * Resolves the VirusTotal key used for a scan.
+   *
+   * There is intentionally NO demo/mock fallback: if neither a per-user key nor
+   * the server-wide `SYSTEM_VT_API_KEY` is available, scanning cannot produce a
+   * real verdict, so we fail loudly instead of fabricating results. The client
+   * surfaces this as an explicit "not configured" error.
+   */
   private static async getEffectiveKey(userId: string): Promise<string> {
     const key = await ApiKeyService.getUserApiKey(userId);
     if (!key) {
-      // Fallback ke demo mode jika belum ada API key, agar scanning berjalan interaktif
-      return 'demo_key';
+      throw new AppError(
+        'SCAN_NOT_CONFIGURED',
+        'Scanning service is not configured. The server is missing a VirusTotal API key.',
+        503
+      );
     }
     return key;
   }
 
-  private static generateMockResults(
-    label: string,
-    isMalicious: boolean
-  ): { stats: ScanStats; vendor_results: VendorResult[] } {
-    // Gunakan daftar KANON 71 vendor sebagai definisi resmi (mock = produksi).
-    const vendors = CANONICAL_VENDORS;
+  /**
+   * Susun field "completed" (stats, verdict, vendor_results, meta) dari
+   * attributes laporan VirusTotal. Dipakai bersama oleh pre-check hash-first
+   * dan oleh polling analisis agar hasilnya selalu identik.
+   */
+  private static async buildCompletedFields(
+    userId: string,
+    attrs: any,
+    itemMetaBase: Record<string, unknown> = {}
+  ): Promise<Partial<ScanRecord>> {
+    const vendor_results = mapVendorResults(attrs?.last_analysis_results);
+    const stats = aggregateStats(vendor_results);
+    const settings = await SettingsService.getSettings(userId);
+    const verdict = calculateVerdict(stats, settings.danger_threshold);
 
-    const malCount = isMalicious ? 5 : 0;
-    const suspCount = isMalicious ? 1 : 0;
-    const harmlessCount = 2;
-
-    const vendor_results: VendorResult[] = vendors.map((v, i) => {
-      // 5 malicious detections when file is flagged
-      if (isMalicious && (i === 10 || i === 24 || i === 35 || i === 38 || i === 43)) {
-        return {
-          engine_name: v,
-          category: 'malicious',
-          result: `Win32.Trojan.${v.split(' ')[0]}.Generic`,
-          method: 'blacklist',
-          engine_version: '2024.1.12',
-          engine_update: '20240112',
-        };
-      }
-      // 1 suspicious detection when file is flagged
-      if (isMalicious && i === 17) {
-        return {
-          engine_name: v,
-          category: 'suspicious',
-          result: `Heur.Suspicious.${v.split(' ')[0]}`,
-          method: 'blacklist',
-          engine_version: '2024.1.12',
-          engine_update: '20240112',
-        };
-      }
-      // 2 harmless vendors
-      if (v === 'Google' || v === 'Cloudflare' || i === 29 || i === 63) {
-        return {
-          engine_name: v,
-          category: 'harmless',
-          result: null,
-          method: 'whitelist',
-          engine_version: '2024.1.12',
-          engine_update: '20240112',
-        };
-      }
-      // Remaining are valid undetected engines
-      return {
-        engine_name: v,
-        category: 'undetected',
-        result: null,
-        method: 'blacklist',
-        engine_version: '2024.1.12',
-        engine_update: '20240112',
-      };
-    });
-
-    // Agregasi stats dari daftar kanon agar jumlah engine konsisten (71).
-    const stats: ScanStats = aggregateStats(vendor_results);
-    // Pastikan malCount/suspCount/harmlessCount sesuai desain mock.
-    stats.malicious = malCount;
-    stats.suspicious = suspCount;
-    stats.harmless = harmlessCount;
-    stats.undetected = vendors.length - malCount - suspCount - harmlessCount;
-
-    return { stats, vendor_results };
+    return {
+      state: 'completed' as const,
+      verdict,
+      stats,
+      vendor_results,
+      item_sha256: attrs?.sha256 ?? null,
+      item_meta: {
+        ...itemMetaBase,
+        size: attrs?.size,
+        type_description: attrs?.type_description,
+        names: attrs?.names,
+        md5: attrs?.md5,
+        sha1: attrs?.sha1,
+        sha256: attrs?.sha256,
+        first_submission_date: attrs?.first_submission_date,
+        last_analysis_date: attrs?.last_analysis_date,
+      },
+      completed_at: new Date().toISOString(),
+    };
   }
 
   static async createFileScan(
@@ -120,28 +99,33 @@ export class ScanService {
     // Save initial record
     await this.saveScan(initialRecord);
 
-    // EICAR test string detection or mock test
-    const isEicar = fileBuffer.toString().includes('EICAR-STANDARD-ANTIVIRUS-TEST-FILE');
-
+    // ---- Fast path: hash-first lookup -------------------------------------
+    // Most files people scan already exist in VirusTotal. Looking the SHA-256
+    // up directly returns a full report in ~1s, versus uploading and waiting
+    // 30-60s for a fresh analysis. Only fall through to the upload when VT has
+    // genuinely never seen the file (404).
     try {
-      if (apiKey === 'demo_key' || apiKey.startsWith('demo_')) {
-        // Mock demo: resolve SYNCHRONOUSLY. A `setTimeout` here would never fire
-        // on a serverless platform (the function is frozen once the response is
-        // sent), leaving the scan stuck on "queued" forever.
-        const { stats, vendor_results } = this.generateMockResults(filename, isEicar);
-        const settings = await SettingsService.getSettings(userId);
-        const verdict = calculateVerdict(stats, settings.danger_threshold);
-        const completed = {
-          state: 'completed' as const,
-          verdict,
-          stats,
-          vendor_results,
-          completed_at: new Date().toISOString(),
-        };
+      const existing = await vtClient.getFileReport(apiKey, sha256);
+      const attrs = existing?.data?.attributes;
+      if (attrs?.last_analysis_results) {
+        const completed = await this.buildCompletedFields(
+          userId,
+          attrs,
+          initialRecord.item_meta as Record<string, unknown>
+        );
+        completed.raw_payload = existing.data;
         await this.updateScan(scanId, completed);
         return { ...initialRecord, ...completed };
       }
+    } catch (err) {
+      // NOT_FOUND (never seen) or a transient upstream error: fall back to the
+      // regular upload flow, which will surface any real failure itself.
+      if (!(err instanceof VirusTotalError && err.code === 'NOT_FOUND')) {
+        logger.warn({ err }, 'Hash pre-check on VirusTotal failed; falling back to upload');
+      }
+    }
 
+    try {
       const res = await vtClient.uploadFile(apiKey, fileBuffer, filename);
       initialRecord.vt_analysis_id = res.id;
       initialRecord.state = 'in_progress';
@@ -150,24 +134,26 @@ export class ScanService {
         state: 'in_progress',
       });
     } catch (err: any) {
-      logger.warn({ err }, 'File upload to VT failed or running in fallback demo mode');
-      // If demo or upstream error, generate a graceful fallback synchronously
-      // (setTimeout would never fire on serverless — see createFileScan note).
-      const { stats, vendor_results } = this.generateMockResults(filename, isEicar);
-      const settings = await SettingsService.getSettings(userId);
-      const verdict = calculateVerdict(stats, settings.danger_threshold);
-      const completed = {
-        state: 'completed' as const,
-        verdict,
-        stats,
-        vendor_results,
-        completed_at: new Date().toISOString(),
-      };
-      await this.updateScan(scanId, completed);
-      return { ...initialRecord, ...completed };
+      // No fabricated fallback: mark the scan as failed and surface the real
+      // upstream error so the user sees the truth and can retry.
+      logger.warn({ err }, 'File upload to VirusTotal failed');
+      await this.updateScan(scanId, { state: 'failed' });
+      initialRecord.state = 'failed';
+      throw this.toScanError(err, 'File upload to VirusTotal failed');
     }
 
     return initialRecord;
+  }
+
+  /**
+   * Converts an arbitrary upstream failure into a typed `AppError` (or rethrows
+   * the original `VirusTotalError`) so the HTTP layer returns an accurate code
+   * and status instead of a generic 500.
+   */
+  private static toScanError(err: any, fallbackMessage: string): Error {
+    if (err instanceof VirusTotalError) return err;
+    if (err instanceof AppError) return err;
+    return new AppError('SCAN_FAILED', fallbackMessage, 502);
   }
 
   static async createUrlScan(userId: string, url: string): Promise<ScanRecord> {
@@ -187,25 +173,52 @@ export class ScanService {
 
     await this.saveScan(initialRecord);
 
-    const isTestMalicious = url.includes('malware') || url.includes('phishing') || url.includes('test-danger');
-
+    // ---- Fast path: URL-report-first lookup --------------------------------
+    // Same idea as the file flow: if VirusTotal already has a recent report for
+    // this URL, return it immediately instead of submitting + waiting ~30s.
     try {
-      if (apiKey.startsWith('demo_')) {
-        // Resolve synchronously (see createFileScan note re: serverless).
-        const { stats, vendor_results } = this.generateMockResults(url, isTestMalicious);
+      const urlId = Buffer.from(url).toString('base64url');
+      const existing = await vtClient.getUrlReport(apiKey, urlId);
+      const attrs = existing?.data?.attributes;
+      // Only reuse a reasonably fresh report (≤ 7 days). Older reports are
+      // submitted for a fresh analysis so the user isn't shown stale verdicts.
+      const analyzedAt = attrs?.last_analysis_date
+        ? attrs.last_analysis_date * 1000
+        : 0;
+      const isFresh = analyzedAt > 0 && Date.now() - analyzedAt < 7 * 24 * 60 * 60 * 1000;
+      if (attrs?.last_analysis_results && isFresh) {
+        const vendor_results = mapVendorResults(attrs.last_analysis_results);
+        const stats = aggregateStats(vendor_results);
         const settings = await SettingsService.getSettings(userId);
         const verdict = calculateVerdict(stats, settings.danger_threshold);
+
         const completed = {
           state: 'completed' as const,
           verdict,
           stats,
           vendor_results,
+          item_meta: {
+            url,
+            final_url: attrs.url,
+            title: attrs.title,
+            http_response_code: attrs.last_http_response_code,
+            categories: attrs.categories,
+            last_analysis_date: attrs.last_analysis_date,
+          },
+          raw_payload: existing.data,
           completed_at: new Date().toISOString(),
         };
+
         await this.updateScan(scanId, completed);
         return { ...initialRecord, ...completed };
       }
+    } catch (err) {
+      if (!(err instanceof VirusTotalError && err.code === 'NOT_FOUND')) {
+        logger.warn({ err }, 'URL report pre-check failed; falling back to submit');
+      }
+    }
 
+    try {
       const res = await vtClient.submitUrl(apiKey, url);
       initialRecord.vt_analysis_id = res.id;
       initialRecord.state = 'in_progress';
@@ -214,19 +227,11 @@ export class ScanService {
         state: 'in_progress',
       });
     } catch (err: any) {
-      logger.warn({ err }, 'URL submission to VT failed, using mock fallback');
-      const { stats, vendor_results } = this.generateMockResults(url, isTestMalicious);
-      const settings = await SettingsService.getSettings(userId);
-      const verdict = calculateVerdict(stats, settings.danger_threshold);
-      const completed = {
-        state: 'completed' as const,
-        verdict,
-        stats,
-        vendor_results,
-        completed_at: new Date().toISOString(),
-      };
-      await this.updateScan(scanId, completed);
-      return { ...initialRecord, ...completed };
+      // No fabricated fallback: mark failed and surface the real error.
+      logger.warn({ err }, 'URL submission to VirusTotal failed');
+      await this.updateScan(scanId, { state: 'failed' });
+      initialRecord.state = 'failed';
+      throw this.toScanError(err, 'URL submission to VirusTotal failed');
     }
 
     return initialRecord;
@@ -251,42 +256,11 @@ export class ScanService {
     await this.saveScan(initialRecord);
 
     try {
-      if (apiKey.startsWith('demo_')) {
-        // Eicar hash check or not found
-        const eicarSha256 = '275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f';
-        const isEicar = cleanHash === eicarSha256;
-        if (cleanHash.startsWith('00000000') || (!isEicar && cleanHash.endsWith('9999'))) {
-          await this.updateScan(scanId, { state: 'not_found' });
-          initialRecord.state = 'not_found';
-          return initialRecord;
-        }
-
-        const { stats, vendor_results } = this.generateMockResults(cleanHash, isEicar || cleanHash.includes('bad'));
-        const settings = await SettingsService.getSettings(userId);
-        const verdict = calculateVerdict(stats, settings.danger_threshold);
-        await this.updateScan(scanId, {
-          state: 'completed',
-          verdict,
-          stats,
-          vendor_results,
-          completed_at: new Date().toISOString(),
-          item_meta: {
-            sha256: cleanHash,
-            type_description: 'Executable File',
-            names: ['sample_file.exe'],
-          },
-        });
-        initialRecord.state = 'completed';
-        initialRecord.verdict = verdict;
-        initialRecord.stats = stats;
-        return initialRecord;
-      }
-
       const res = await vtClient.getFileReport(apiKey, cleanHash);
       const attrs = res?.data?.attributes || {};
       // Daftar kanon 71 vendor (pad undetected bila VT tidak melaporkan).
       const vendor_results = mapVendorResults(attrs.last_analysis_results);
-      const stats = aggregateStats(vendor_results, attrs.last_analysis_stats);
+      const stats = aggregateStats(vendor_results);
       const settings = await SettingsService.getSettings(userId);
       const verdict = calculateVerdict(stats, settings.danger_threshold);
 
@@ -319,20 +293,11 @@ export class ScanService {
         return initialRecord;
       }
 
-      // Fallback for demonstration
-      const { stats, vendor_results } = this.generateMockResults(cleanHash, false);
-      const settings = await SettingsService.getSettings(userId);
-      const verdict = calculateVerdict(stats, settings.danger_threshold);
-      await this.updateScan(scanId, {
-        state: 'completed',
-        verdict,
-        stats,
-        vendor_results,
-        completed_at: new Date().toISOString(),
-      });
-      initialRecord.state = 'completed';
-      initialRecord.verdict = verdict;
-      return initialRecord;
+      // No fabricated fallback: mark failed and surface the real error.
+      logger.warn({ err }, 'Hash lookup on VirusTotal failed');
+      await this.updateScan(scanId, { state: 'failed' });
+      initialRecord.state = 'failed';
+      throw this.toScanError(err, 'Hash lookup on VirusTotal failed');
     }
   }
 
@@ -356,7 +321,9 @@ export class ScanService {
     // Polling VT if vt_analysis_id exists
     const now = Date.now();
     const lastPolled = scan.last_polled_at ? new Date(scan.last_polled_at).getTime() : 0;
-    const canPollVT = now - lastPolled >= 15000; // max once every 15s
+    // Throttled to respect the VirusTotal quota (default 4 req/min), so we poll
+    // at most once every 15s — 4/min, exactly at the configured budget.
+    const canPollVT = now - lastPolled >= 15000;
 
     if (scan.vt_analysis_id && canPollVT) {
       try {
@@ -369,7 +336,7 @@ export class ScanService {
         if (attrs?.status === 'completed') {
           // Ambil hasil kanon 71 vendor + stats.
           let vendor_results = mapVendorResults(attrs.results);
-          let stats = aggregateStats(vendor_results, attrs.stats);
+          let stats = aggregateStats(vendor_results);
 
           let itemMeta = scan.item_meta || {};
           let sha256 = scan.item_sha256;
@@ -384,7 +351,7 @@ export class ScanService {
               const urlAttrs = urlRes?.data?.attributes || {};
               const urlVendors = mapVendorResults(urlAttrs.last_analysis_results);
               vendor_results = urlVendors;
-              stats = aggregateStats(urlVendors, urlAttrs.last_analysis_stats);
+              stats = aggregateStats(urlVendors);
               rawData = urlRes.data ?? rawData;
               itemMeta = {
                 ...itemMeta,
@@ -502,19 +469,23 @@ export class ScanService {
     userId: string,
     scanId: string
   ): Promise<ScanRecord | null> {
-    // 1. Cek memoryStore (cepat, handal, anti gagal untuk guest scan)
+    // 1. Cek memoryStore (cepat, handal, anti gagal untuk guest scan).
+    //    PENTING: memoryStore bersifat GLOBAL (dibagi semua sesi anonim), jadi
+    //    kepemilikan scan WAJIB diverifikasi lewat `user_id`. Tanpa cek ini,
+    //    siapa pun yang menebak `scanId` bisa membaca scan sesi lain (IDOR).
     const memScan = memoryStore.scans.get(scanId);
-    if (memScan) {
+    if (memScan && memScan.user_id === userId) {
       return memScan;
     }
 
-    // 2. Cek Supabase jika tersedia
+    // 2. Cek Supabase jika tersedia — filter juga berdasarkan user_id.
     if (supabase) {
       try {
         const { data, error } = await supabase
           .from('scans')
           .select('*')
           .eq('id', scanId)
+          .eq('user_id', userId)
           .maybeSingle();
 
         if (!error && data) {

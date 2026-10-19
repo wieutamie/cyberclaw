@@ -59,7 +59,7 @@ export const ResultReveal: React.FC<ResultRevealProps> = ({ verdict = 'clean' })
       <img
         src="/BufferCat.svg"
         alt=""
-        className="gemash-cat relative w-56 h-48 sm:w-64 sm:h-56 object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,0.5)] select-none"
+        className="gemash-cat relative w-56 sm:w-64 h-auto object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,0.5)] select-none"
         draggable={false}
       />
 
