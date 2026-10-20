@@ -1,0 +1,3 @@
+{
+  "installCommand": "npm install && npm --prefix server install && npm --prefix client install"
+}
