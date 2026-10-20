@@ -427,7 +427,9 @@ export const ResultCard: React.FC<ResultCardProps> = ({ scan, onScanAnother }) =
           <span className="text-gray-300">
             <span className="uppercase font-semibold text-brand-accent">{scan.type}</span> ·{' '}
             {formatDateTime(
-              scan.completed_at || scan.created_at,
+              scan.item_meta?.last_analysis_date ??
+                scan.completed_at ??
+                scan.created_at,
               settings.timezone,
               settings.time_format
             )}
