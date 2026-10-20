@@ -1,3 +1,4 @@
 {
-  "installCommand": "npm install && npm --prefix server install && npm --prefix client install"
+  "installCommand": "npm install && npm --prefix server install && npm --prefix client install",
+  "outputDirectory": "client/dist"
 }
