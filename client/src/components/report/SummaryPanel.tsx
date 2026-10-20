@@ -235,7 +235,7 @@ export const SummaryPanel: React.FC<SummaryPanelProps> = ({ scan, onRescanSucces
             <span className="text-muted">Last Analysis:</span>
             <span className="text-gray-300 text-[11px]">
               {formatDateTime(
-                scan.completed_at || scan.created_at,
+                scan.item_meta?.last_analysis_date ?? scan.completed_at ?? scan.created_at,
                 settings.timezone,
                 settings.time_format
               )}

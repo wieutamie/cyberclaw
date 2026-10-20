@@ -1,4 +1,5 @@
-import React from 'react';
+import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   LineChart,
   Line,
@@ -8,7 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
-} from 'recharts';
+} from "recharts";
 
 interface DailyData {
   date: string;
@@ -22,7 +23,28 @@ interface ScansLineProps {
   data: DailyData[];
 }
 
+/** Parse a YYYY-MM-DD day key into a *local* Date (avoids the UTC-midnight shift). */
+function parseDayKey(key: string): Date {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
 export const ScansLine: React.FC<ScansLineProps> = ({ data }) => {
+  const { i18n } = useTranslation();
+  const locale = (i18n.language || "en").split("-")[0];
+
+  // Day keys follow the active locale layout (en -> MM/DD, id -> DD/MM) so the
+  // chart stays consistent with every other timestamp in the app.
+  let shortFmt: Intl.DateTimeFormat | null = null;
+  let fullFmt: Intl.DateTimeFormat | null = null;
+  try {
+    shortFmt = new Intl.DateTimeFormat(locale, { month: "2-digit", day: "2-digit" });
+    fullFmt = new Intl.DateTimeFormat(locale, { year: "numeric", month: "2-digit", day: "2-digit" });
+  } catch {
+    shortFmt = null;
+    fullFmt = null;
+  }
+
   if (!data || data.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-muted text-sm">
@@ -31,10 +53,9 @@ export const ScansLine: React.FC<ScansLineProps> = ({ data }) => {
     );
   }
 
-  // Format short date for X axis
   const formattedData = data.map((d) => ({
     ...d,
-    shortDate: d.date.slice(5), // MM-DD
+    shortDate: shortFmt ? shortFmt.format(parseDayKey(d.date)) : d.date.slice(5),
   }));
 
   return (
@@ -66,7 +87,7 @@ export const ScansLine: React.FC<ScansLineProps> = ({ data }) => {
                 return (
                   <div className="bg-surface border border-surface-alt p-3 rounded-lg shadow-xl text-xs flex flex-col gap-1">
                     <span className="font-semibold text-white border-b border-surface-alt pb-1 mb-1">
-                      {fullItem.date}
+                      {fullFmt ? fullFmt.format(parseDayKey(fullItem.date)) : fullItem.date}
                     </span>
                     <span className="text-white">
                       Total: <strong className="font-mono">{fullItem.total}</strong>
@@ -87,7 +108,7 @@ export const ScansLine: React.FC<ScansLineProps> = ({ data }) => {
             }}
           />
           <Legend
-            wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
+            wrapperStyle={{ fontSize: "11px", paddingTop: "10px" }}
             formatter={(value) => <span className="text-gray-300 capitalize">{value}</span>}
           />
           <Line
@@ -96,7 +117,7 @@ export const ScansLine: React.FC<ScansLineProps> = ({ data }) => {
             name="Total"
             stroke="#FF0090"
             strokeWidth={2.5}
-            dot={{ r: 3, fill: '#FF0090' }}
+            dot={{ r: 3, fill: "#FF0090" }}
             activeDot={{ r: 5 }}
           />
           <Line
