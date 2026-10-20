@@ -10,9 +10,26 @@
  * The rewrite in vercel.json (`/api/(.*)` → `/api`) routes these requests
  * here; everything is forwarded transparently to the API project.
  */
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+// Kept dependency-free on purpose: plain types avoid needing the `@vercel/node`
+// package in the client workspace (tsc would flag the missing module at build).
 
 const API_ORIGIN = 'https://cyberclaw-api.vercel.app';
+
+type Req = {
+  url?: string;
+  method: string;
+  headers: Record<string, string | string[] | undefined>;
+  body?: unknown;
+  rawBody?: Buffer;
+};
+
+type Res = {
+  status(code: number): Res;
+  setHeader(name: string, value: string | string[]): void;
+  json(obj: unknown): void;
+  end(body?: string): void;
+};
 
 const SKIP_REQUEST_HEADERS = new Set([
   'host',
@@ -36,8 +53,10 @@ const SKIP_RESPONSE_HEADERS = new Set([
   'x-vercel-served-region',
 ]);
 
-export default async (req: VercelRequest, res: VercelResponse) => {
-  const path = (req.originalUrl || req.url || '/').replace(/^\/api/, '');
+export default async (req: Req, res: Res) => {
+  // `req.url` in Vercel Node functions is the relative path WITH query,
+  // e.g. `/api/scan/file` — forward it untouched to the API project.
+  const path = req.url || '/api';
 
   const headers: Record<string, string> = {};
   for (const [key, value] of Object.entries(req.headers)) {
@@ -80,3 +99,4 @@ export default async (req: VercelRequest, res: VercelResponse) => {
   res.status(upstream.status);
   res.end(await upstream.text());
 };
+
