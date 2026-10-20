@@ -20,8 +20,8 @@ type Req = {
   url?: string;
   method: string;
   headers: Record<string, string | string[] | undefined>;
-  body?: unknown;
-  rawBody?: Buffer;
+  /** Bare Vercel Node functions expose the raw body as an async stream. */
+  [Symbol.asyncIterator](): AsyncIterator<Buffer>;
 };
 
 type Res = {
@@ -65,14 +65,16 @@ export default async (req: Req, res: Res) => {
     else if (value !== undefined) headers[key] = String(value);
   }
 
+  // Bare Vercel Node functions do NOT parse the body (no `req.body` /
+  // `req.rawBody`), so read the raw stream ourselves. Forwarding the raw
+  // bytes keeps multipart boundaries intact for file uploads.
   let body: BodyInit | undefined;
   if (req.method !== 'GET' && req.method !== 'HEAD') {
-    if (headers['content-type']?.includes('application/json')) {
-      body = JSON.stringify(req.body ?? {});
-      delete headers['content-length'];
-    } else if (req.rawBody && req.rawBody.length > 0) {
-      // multipart/form-data (file upload) or any other raw payload
-      body = req.rawBody;
+    const chunks: Buffer[] = [];
+    for await (const chunk of req) chunks.push(chunk);
+    const raw = Buffer.concat(chunks);
+    if (raw.length > 0) {
+      body = raw as unknown as BodyInit;
       delete headers['content-length'];
     }
   }
