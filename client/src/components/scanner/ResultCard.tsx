@@ -62,7 +62,9 @@ export const ResultCard: React.FC<ResultCardProps> = ({ scan, onScanAnother }) =
   };
 
   const totalEnginesCount = totalEngines(stats);
-  const ratioPercent = totalEnginesCount > 0 ? (stats.malicious / totalEnginesCount) * 100 : 0;
+  // "Detected" = every engine that flagged a threat (malicious + suspicious),
+  // so the donut center matches the verdict: 0% only when nothing flagged.
+  const ratioPercent = totalEnginesCount > 0 ? ((stats.malicious + stats.suspicious) / totalEnginesCount) * 100 : 0;
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -187,20 +189,23 @@ export const ResultCard: React.FC<ResultCardProps> = ({ scan, onScanAnother }) =
 
   const itemSha256 = scan.item_sha256 || scan.item_meta?.sha256;
 
-  // Donut chart data (per PRD §4.1): danger #FF0000, warning #FF7300,
-  // clean #11FF00. "Other" (undetected/timeout/failure/type-unsupported) uses a
-  // muted neutral — intentionally NOT green, so an unknown result is never
-  // mistaken for "safe". Includes every non-big-four category so the buckets
-  // always sum to the full engine count (71). Only non-zero slices are plotted.
+  // Donut chart data (per PRD §4.1): danger #FF0000, warning #FF7300, clean
+  // #11FF00. The green "Clean" slice intentionally merges `harmless` +
+  // `undetected` — both mean "no threat found" — so a clean scan renders as a
+  // full green ring instead of a confusing grey gap next to a "0% detected"
+  // center. The muted neutral "Other" slice is reserved for genuinely unknown
+  // outcomes (timeout/failure/unsupported) so an unknown result is never
+  // mistaken for "safe". Buckets always sum to the full engine count (71).
+  // Only non-zero slices are plotted.
   const otherCount =
-    stats.undetected +
     (stats.timeout || 0) +
     (stats.failure || 0) +
     (stats.unsupported || 0);
+  const cleanCount = stats.harmless + stats.undetected;
   const donutData = [
     { name: t('scan.verdictDanger'), value: stats.malicious, color: '#FF0000' },
     { name: t('scan.verdictWarning'), value: stats.suspicious, color: '#FF7300' },
-    { name: t('scan.verdictClean'), value: stats.harmless, color: '#11FF00' },
+    { name: t('scan.verdictClean'), value: cleanCount, color: '#11FF00' },
     { name: t('scan.verdictOther'), value: otherCount, color: '#64748B' },
   ].filter((d) => d.value > 0);
 
@@ -244,7 +249,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ scan, onScanAnother }) =
   ];
 
   return (
-    <div className="relative w-full max-w-[1140px] mx-auto bg-bg rounded-card p-5 sm:p-8 shadow-card overflow-hidden result-card-pop">
+    <div className="relative w-full max-w-[1320px] mx-auto bg-bg rounded-card p-5 sm:p-8 lg:p-10 shadow-card overflow-hidden result-card-pop">
       {/* Very faint CyberClaw watermark behind the content (tinted #FCEEEA).
           Kept extremely subtle so it never competes with the verdict text. */}
       <span
@@ -262,9 +267,9 @@ export const ResultCard: React.FC<ResultCardProps> = ({ scan, onScanAnother }) =
         }}
       />
 
-      <div className="relative z-10 animate-fade-rise flex flex-col lg:flex-row items-center lg:items-stretch gap-8 lg:gap-6">
+      <div className="relative z-10 animate-fade-rise flex flex-col lg:flex-row items-center lg:items-stretch gap-8 lg:gap-10">
         {/* ── Left: illustration + file identity + report CTA ───────────── */}
-        <div className="flex flex-col items-center justify-center gap-4 w-full lg:w-72 shrink-0 text-center">
+        <div className="flex flex-col items-center justify-center gap-4 w-full lg:w-80 shrink-0 text-center">
           <img
             src={verdictIllustration}
             alt={verdictTitle}

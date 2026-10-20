@@ -4,7 +4,6 @@ import {
   CheckCircle2,
   Clock,
   Globe,
-  Sliders,
   Database,
   Trash2,
   Download,
@@ -30,15 +29,14 @@ export const GeneralPreferences: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { settings, updateSettings } = useSettings();
 
-  // Date & Time
-  const [timezone, setTimezone] = useState(settings.timezone || 'Asia/Jakarta');
+  // Date & Time — if a stored timezone is outside the common list (e.g. from an
+  // older version), fall back to the default zone so the picker always shows
+  // a valid selection.
+  const savedTz = settings.timezone || '';
+  const [timezone, setTimezone] = useState(
+    TIMEZONE_GROUPS.some((g) => g.zones.includes(savedTz)) ? savedTz : 'Asia/Jakarta'
+  );
   const [timeFormat, setTimeFormat] = useState<string>(settings.time_format || '24h');
-
-  // Scan Preferences
-  const [defaultTab, setDefaultTab] = useState<string>(settings.default_tab || 'file');
-  const [threshold, setThreshold] = useState(settings.danger_threshold || 3);
-  const [showWarning, setShowWarning] = useState(settings.show_upload_warning);
-  const [autoOpen, setAutoOpen] = useState(settings.auto_open_report);
 
   // History & Retention
   const [retentionDays, setRetentionDays] = useState<number | null>(settings.history_retention_days);
@@ -58,17 +56,6 @@ export const GeneralPreferences: React.FC = () => {
     await updateSettings({
       timezone,
       time_format: timeFormat as any,
-    });
-    showSuccessToast(t('common.saved'));
-  };
-
-  const handleSaveScanPrefs = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await updateSettings({
-      default_tab: defaultTab as any,
-      danger_threshold: Number(threshold),
-      show_upload_warning: showWarning,
-      auto_open_report: autoOpen,
     });
     showSuccessToast(t('common.saved'));
   };
@@ -141,23 +128,8 @@ export const GeneralPreferences: React.FC = () => {
           />
         </div>
 
-        {/* Right column — Scan Preferences + History & Retention */}
+        {/* Right column — History & Retention */}
         <div className="flex flex-col gap-6">
-          <ScanSection
-            defaultTab={defaultTab}
-            setDefaultTab={setDefaultTab}
-            threshold={threshold}
-            setThreshold={setThreshold}
-            showWarning={showWarning}
-            setShowWarning={setShowWarning}
-            autoOpen={autoOpen}
-            setAutoOpen={setAutoOpen}
-            onSubmit={handleSaveScanPrefs}
-            t={t}
-            selectClass={selectClass}
-            labelClass={labelClass}
-          />
-
           <HistorySection
             retentionDays={retentionDays}
             onRetentionChange={async (val) => {
@@ -326,103 +298,6 @@ const LanguageSection: React.FC<LanguageSectionProps> = ({
       </select>
       <span className="text-[11px] text-muted mt-1 block">{t('preferences.languageHelp')}</span>
     </div>
-  </section>
-);
-
-
-interface ScanSectionProps extends CommonProps {
-  defaultTab: string;
-  setDefaultTab: (v: string) => void;
-  threshold: number;
-  setThreshold: (v: number) => void;
-  showWarning: boolean;
-  setShowWarning: (v: boolean) => void;
-  autoOpen: boolean;
-  setAutoOpen: (v: boolean) => void;
-  onSubmit: (e: React.FormEvent) => void;
-}
-
-const ScanSection: React.FC<ScanSectionProps> = ({
-  defaultTab,
-  setDefaultTab,
-  threshold,
-  setThreshold,
-  showWarning,
-  setShowWarning,
-  autoOpen,
-  setAutoOpen,
-  onSubmit,
-  t,
-  selectClass,
-  labelClass,
-}) => (
-  <section className="bg-surface border border-surface-alt rounded-card p-6 shadow-card flex flex-col gap-4">
-    <div className="flex items-center gap-2.5 pb-3 border-b border-surface-alt">
-      <Sliders className="w-5 h-5 text-brand-accent" />
-      <h3 className="text-base font-bold text-white">{t('preferences.scanPreferences')}</h3>
-    </div>
-
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      <div>
-        <label className={labelClass}>{t('preferences.defaultTab')}</label>
-        <select
-          value={defaultTab}
-          onChange={(e) => setDefaultTab(e.target.value)}
-          className={selectClass}
-        >
-          <option value="file">{t('preferences.tabFile')}</option>
-          <option value="url">{t('preferences.tabUrl')}</option>
-          <option value="hash">{t('preferences.tabHash')}</option>
-          <option value="history">{t('preferences.tabHistory')}</option>
-        </select>
-      </div>
-
-      <div>
-        <label className={labelClass}>{t('preferences.dangerThreshold')}</label>
-        <input
-          type="number"
-          min={1}
-          max={10}
-          value={threshold}
-          onChange={(e) => setThreshold(Number(e.target.value))}
-          className={selectClass}
-        />
-        <span className="text-[11px] text-muted mt-1 block">
-          {t('preferences.dangerThresholdHelp')}
-        </span>
-      </div>
-
-      <div className="flex flex-col gap-3 pt-1">
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={showWarning}
-            onChange={(e) => setShowWarning(e.target.checked)}
-            className="w-4 h-4 rounded border-surface-alt bg-surface-alt text-brand focus:ring-brand-accent"
-          />
-          <span className="text-sm text-gray-200">{t('preferences.showWarningToggle')}</span>
-        </label>
-
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={autoOpen}
-            onChange={(e) => setAutoOpen(e.target.checked)}
-            className="w-4 h-4 rounded border-surface-alt bg-surface-alt text-brand focus:ring-brand-accent"
-          />
-          <span className="text-sm text-gray-200">{t('preferences.autoOpenReport')}</span>
-        </label>
-      </div>
-
-      <div className="flex justify-end">
-        <button
-          type="submit"
-          className="px-5 py-2 rounded-btn bg-brand hover:bg-brand-accent text-white font-bold text-xs shadow-soft transition-all"
-        >
-          {t('common.save')}
-        </button>
-      </div>
-    </form>
   </section>
 );
 

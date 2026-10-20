@@ -16,25 +16,12 @@ export interface LanguageOption {
   flag: string;
 }
 
+// Only English and Indonesian ship translation files, so the picker only
+// offers those two. Any other saved language code falls back to English
+// (see i18n/index.ts, which validates against LANGUAGE_CODES).
 export const LANGUAGES: LanguageOption[] = [
   { code: 'en', label: 'English', english: 'English', flag: '🇬🇧' },
   { code: 'id', label: 'Bahasa Indonesia', english: 'Indonesian', flag: '🇮🇩' },
-  { code: 'ms', label: 'Bahasa Melayu', english: 'Malay', flag: '🇲🇾' },
-  { code: 'es', label: 'Español', english: 'Spanish', flag: '🇪🇸' },
-  { code: 'pt', label: 'Português', english: 'Portuguese', flag: '🇵🇹' },
-  { code: 'fr', label: 'Français', english: 'French', flag: '🇫🇷' },
-  { code: 'de', label: 'Deutsch', english: 'German', flag: '🇩🇪' },
-  { code: 'it', label: 'Italiano', english: 'Italian', flag: '🇮🇹' },
-  { code: 'nl', label: 'Nederlands', english: 'Dutch', flag: '🇳🇱' },
-  { code: 'ru', label: 'Русский', english: 'Russian', flag: '🇷🇺' },
-  { code: 'tr', label: 'Türkçe', english: 'Turkish', flag: '🇹🇷' },
-  { code: 'ar', label: 'العربية', english: 'Arabic', flag: '🇸🇦' },
-  { code: 'hi', label: 'हिन्दी', english: 'Hindi', flag: '🇮🇳' },
-  { code: 'th', label: 'ไทย', english: 'Thai', flag: '🇹🇭' },
-  { code: 'vi', label: 'Tiếng Việt', english: 'Vietnamese', flag: '🇻🇳' },
-  { code: 'zh', label: '中文', english: 'Chinese', flag: '🇨🇳' },
-  { code: 'ja', label: '日本語', english: 'Japanese', flag: '🇯🇵' },
-  { code: 'ko', label: '한국어', english: 'Korean', flag: '🇰🇷' },
 ];
 
 export const DEFAULT_LANGUAGE = 'en';

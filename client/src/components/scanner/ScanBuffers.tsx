@@ -120,18 +120,8 @@ export const ScanBuffers: React.FC<ScanBuffersProps> = ({
           style={{ background: 'radial-gradient(circle, rgba(255,0,144,0.45) 0%, transparent 70%)' }}
         />
 
-        {/* Oversized BufferCat watermark sitting behind the content. Darkened
-            (brightness-0) so it reads as a deep maroon silhouette rather than a
-            washed-out white blob, exactly like the reference design. */}
-        <img
-          src="/BufferCat.svg"
-          alt=""
-          aria-hidden="true"
-          draggable={false}
-          className="pointer-events-none absolute left-1/2 top-1/2 w-[78%] max-w-none -translate-x-1/2 -translate-y-1/2 select-none opacity-[0.18] brightness-0"
-        />
-
-        {/* ---- Foreground content ---- */}
+        {/* ---- Foreground content ---- (the oversized BufferCat watermark that
+            sat behind this content was removed — it read as an ugly dark blob) */}
         <div className="relative z-10 flex flex-col items-center">
           {/* BufferCat: swings left/right while scanning, then spins 360° once
               the result is ready. */}
@@ -139,7 +129,7 @@ export const ScanBuffers: React.FC<ScanBuffersProps> = ({
             <img
               src="/BufferCat.svg"
               alt="BufferCat"
-              className={`w-56 sm:w-72 h-auto object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)] ${
+              className={`w-40 sm:w-52 h-auto object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)] ${
                 finishing ? 'animate-cat-spin' : 'animate-cat-swing'
               }`}
             />

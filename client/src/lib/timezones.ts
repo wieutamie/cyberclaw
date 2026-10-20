@@ -1,10 +1,11 @@
 /**
  * Timezone helpers.
  *
- * The full IANA timezone list is derived at runtime from
- * `Intl.supportedValuesOf('timeZone')` so it is always complete and never goes
- * stale. A curated fallback is provided for older engines that lack
- * `supportedValuesOf`.
+ * We ship a curated list of the most common IANA timezones — every entry is a
+ * valid IANA identifier, so `Intl.DateTimeFormat` / `formatDateTime` works
+ * with all of them (this is what powers the timestamps shown in scan
+ * results). The full ~430-zone IANA list was removed from the picker because
+ * it was overwhelming; anything unusual still works if stored manually.
  */
 
 export interface TimezoneGroup {
@@ -12,7 +13,8 @@ export interface TimezoneGroup {
   zones: string[];
 }
 
-const FALLBACK_ZONES: string[] = [
+/** The curated, common-timezone list shown in the Preferences picker. */
+export const COMMON_TIMEZONES: string[] = [
   'UTC',
   'Africa/Cairo',
   'Africa/Johannesburg',
@@ -57,25 +59,9 @@ const FALLBACK_ZONES: string[] = [
   'Pacific/Honolulu',
 ];
 
-/** Returns the full, sorted list of IANA timezone identifiers. */
+/** Returns the curated list of common IANA timezone identifiers. */
 export function getAllTimezones(): string[] {
-  try {
-    const supportedValuesOf = (Intl as unknown as {
-      supportedValuesOf?: (key: string) => string[];
-    }).supportedValuesOf;
-    if (typeof supportedValuesOf === 'function') {
-      const zones = supportedValuesOf('timeZone');
-      if (Array.isArray(zones) && zones.length > 0) {
-        const set = new Set(zones);
-        // `supportedValuesOf` omits UTC on some engines — make sure it is present.
-        if (!set.has('UTC')) set.add('UTC');
-        return [...set].sort((a, b) => a.localeCompare(b));
-      }
-    }
-  } catch {
-    /* fall through to the curated list */
-  }
-  return [...FALLBACK_ZONES];
+  return [...COMMON_TIMEZONES];
 }
 
 /** Groups timezones by their region prefix (text before the first "/"). */

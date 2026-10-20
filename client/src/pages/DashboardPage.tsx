@@ -113,10 +113,10 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="relative flex-1 flex flex-col justify-center py-2 lg:py-4">
-      <div className="relative grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+    <div className="relative flex-1 flex flex-col justify-center py-2 md:py-4">
+      <div className="relative grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-10 items-center">
         {/* Left: hero copy — balanced ~50:50 with the scanner panel */}
-        <section className="lg:col-span-6 flex flex-col justify-center gap-4 lg:gap-5 animate-fade-rise order-2 lg:order-1">
+        <section className="md:col-span-6 flex flex-col justify-center gap-4 md:gap-5 animate-fade-rise order-1">
           <h1 className="font-display text-3xl sm:text-4xl lg:text-[2.6rem] font-extrabold text-white leading-tight whitespace-pre-line">
             {t('dashboard.heroTitle')}
           </h1>
@@ -126,7 +126,7 @@ export default function DashboardPage() {
         </section>
 
         {/* Right: scanner card — balanced ~50:50 with the hero copy */}
-        <section className="lg:col-span-6 animate-fade-rise [animation-delay:80ms] order-1 lg:order-2">
+        <section className="md:col-span-6 animate-fade-rise [animation-delay:80ms] order-2">
           {/* Top padding gives the active tab's disc room to bulge above the
               bar; overflow stays visible so the bump isn't clipped. */}
           <div className="relative pt-16">
