@@ -94,7 +94,7 @@ export default async (req: Req, res: Res) => {
 
   for (const [key, value] of Object.entries(upstream.headers)) {
     if (SKIP_RESPONSE_HEADERS.has(key.toLowerCase())) continue;
-    if (key.toLowerCase().startsWith('access-control-')) continue;
+    
     res.setHeader(key, value as string);
   }
 
