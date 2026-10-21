@@ -27,13 +27,30 @@ const allowedOrigins = env.CLIENT_URL.split(',')
   .filter(Boolean)
   .filter((origin) => origin !== '*');
 
+// Reject disallowed origins with 403 BEFORE the cors middleware runs.
+// This avoids the cors package's error-callback path, which would otherwise
+// fall through to the generic error handler and return a confusing 500.
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && !allowedOrigins.includes(origin)) {
+    return res.status(403).json({
+      ok: false,
+      error: {
+        code: 'CORS_ORIGIN_NOT_ALLOWED',
+        message: 'Origin not allowed by CORS policy.',
+      },
+    });
+  }
+  return next();
+});
+
 app.use(
   cors({
     origin: (origin, callback) => {
       // Allow non-browser requests (no Origin header), e.g. curl/health checks.
       if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error('Blocked by CORS policy: Origin not allowed'));
+      return callback(null, false);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
