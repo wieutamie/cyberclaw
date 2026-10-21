@@ -171,11 +171,14 @@ export class VirusTotalClient {
    * Invalid keys produce a 401 `WrongCredentialsError` from VT.
    *
    * If `/users` fails for reasons other than a bad key (e.g. 403 for some
-   * restricted key types, rate limit, network error), we fall back to the
-   * public `POST /files/upload_url` endpoint: a *valid* key yields a 4xx
-   * (missing required `file_type` field), while an *invalid* key still
-   * yields 401. A 429 on either endpoint means the key authenticated
+   * restricted key types, rate limit, network error), we fall back to
+   * `GET /files/upload_url`: a *valid* key yields 200, while an *invalid* key
+   * still yields 401. A 429 on either endpoint means the key authenticated
    * successfully, so it is valid too.
+   *
+   * Note: the fallback must be **GET**. `POST /files/upload_url` is not a
+   * public endpoint and answers `405 Method Not Allowed`, which would make
+   * every valid key look broken.
    */
   async testApiKey(apiKey: string): Promise<boolean> {
     try {
@@ -189,16 +192,17 @@ export class VirusTotalClient {
       }
       try {
         await this.request('/files/upload_url', apiKey, {
-          method: 'POST',
-          body: new URLSearchParams().toString(),
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          method: 'GET',
         });
         return true;
       } catch (innerErr: unknown) {
         if (innerErr instanceof VirusTotalError) {
           if (innerErr.code === 'INVALID_API_KEY') return false;
-          // Any sub-500 non-403 (400 missing field, 404, 429 rate/quota)
-          // proves the key authenticated → valid.
+          // A 405 means we called the endpoint with the wrong method — that is
+          // a bug on our side, never proof that the key is valid.
+          if (innerErr.statusCode === 405) throw innerErr;
+          // Any other sub-500 non-403 (404, 429 rate/quota) proves the key
+          // authenticated → valid.
           if (innerErr.statusCode < 500 && innerErr.statusCode !== 403) return true;
           throw innerErr;
         }
@@ -208,39 +212,70 @@ export class VirusTotalClient {
   }
 
   /**
-   * Uploads a file through the **public** VirusTotal API flow, which works
-   * with free API keys:
+   * Uploads a file to VirusTotal through the **public** API.
    *
-   * 1. `POST /files/upload_url` with `file_type` → VT answers with a signed
-   *    upload task `{ id, url, method, required_headers }` where `id` is the
-   *    SHA-256 of the file being uploaded.
-   * 2. The raw file bytes are sent to that signed URL.
+   * `POST /files` takes `multipart/form-data` with a `file` field and works
+   * with free (public) API keys for files up to 32 MB. It answers with the id
+   * of the freshly created *analysis*, which is exactly what
+   * `GET /analyses/{id}` polls.
    *
-   * (The private `POST /files` endpoint answers 403 for public keys, which
-   * is why this two-step flow is used.)
+   * Files above 32 MB must instead be sent to the one-shot signed URL returned
+   * by `GET /files/upload_url` (note: **GET**, not POST — the POST variant only
+   * exists on the premium endpoint and answers `405 Method Not Allowed` for
+   * public keys, which used to surface to users as a bogus 405 on file scans).
    */
   async uploadFile(
     apiKey: string,
     fileBuffer: Buffer,
     filename: string
   ): Promise<{ id: string }> {
-    const form = new FormData();
-    form.append('file_type', mimeForFile(filename));
+    const DIRECT_UPLOAD_LIMIT = 32 * 1024 * 1024;
 
-    const task: {
-      data: {
-        id: string;
-        url: string;
-        method?: string;
-        required_headers?: Record<string, string>[];
-      };
-    } = await this.request('/files/upload_url', apiKey, {
+    if (fileBuffer.length > DIRECT_UPLOAD_LIMIT) {
+      return this.uploadLargeFile(apiKey, fileBuffer, filename);
+    }
+
+    const form = new FormData();
+    form.append(
+      'file',
+      new Blob([new Uint8Array(fileBuffer)], { type: mimeForFile(filename) }),
+      filename
+    );
+
+    const data = await this.request<{ data: { id: string } }>('/files', apiKey, {
       method: 'POST',
       body: form,
     });
 
-    const upload = task.data;
-    if (!upload?.url) {
+    const analysisId = data?.data?.id;
+    if (!analysisId) {
+      throw new VirusTotalError(
+        'UPSTREAM_ERROR',
+        'VirusTotal did not return an analysis id.',
+        502
+      );
+    }
+
+    return { id: analysisId };
+  }
+
+  /**
+   * Two-step upload for files larger than the 32 MB direct-upload limit:
+   *
+   * 1. `GET /files/upload_url` → a one-shot signed URL.
+   * 2. `POST` the same multipart body used by `POST /files` to that URL.
+   */
+  private async uploadLargeFile(
+    apiKey: string,
+    fileBuffer: Buffer,
+    filename: string
+  ): Promise<{ id: string }> {
+    const task = await this.request<{ data: string }>('/files/upload_url', apiKey, {
+      method: 'GET',
+    });
+
+    const uploadUrl = typeof task?.data === 'string' ? task.data : '';
+    if (!uploadUrl) {
       throw new VirusTotalError(
         'UPSTREAM_ERROR',
         'VirusTotal did not return an upload URL.',
@@ -248,22 +283,22 @@ export class VirusTotalClient {
       );
     }
 
-    const uploadHeaders: Record<string, string> = {
-      'Content-Type': 'application/octet-stream',
-    };
-    for (const h of upload.required_headers ?? []) {
-      for (const [k, v] of Object.entries(h)) uploadHeaders[k] = v;
-    }
+    const form = new FormData();
+    form.append(
+      'file',
+      new Blob([new Uint8Array(fileBuffer)], { type: mimeForFile(filename) }),
+      filename
+    );
 
-    let res: Response;
+    let res: globalThis.Response;
     try {
-      res = await fetch(upload.url, {
-        method: upload.method || 'PUT',
-        body: fileBuffer,
-        headers: uploadHeaders,
+      res = await fetch(uploadUrl, {
+        method: 'POST',
+        body: form,
+        headers: { 'x-apikey': apiKey, Accept: 'application/json' },
       });
     } catch (err: unknown) {
-      logger.error({ err, url: upload.url }, 'VirusTotal signed upload failed');
+      logger.error({ err }, 'VirusTotal signed upload failed');
       throw new VirusTotalError(
         'UPSTREAM_ERROR',
         'VirusTotal is temporarily unreachable. Please try again.',
@@ -300,9 +335,19 @@ export class VirusTotalClient {
       );
     }
 
-    // `id` is the URL-encoded SHA-256 of the file; decoded so it can be
-    // used directly with `GET /files/{hash}`.
-    return { id: decodeURIComponent(upload.id) };
+    const body = (await res.json().catch(() => null)) as
+      | { data?: { id?: string } }
+      | null;
+    const analysisId = body?.data?.id;
+    if (!analysisId) {
+      throw new VirusTotalError(
+        'UPSTREAM_ERROR',
+        'VirusTotal did not return an analysis id.',
+        502
+      );
+    }
+
+    return { id: analysisId };
   }
 
   async submitUrl(apiKey: string, urlToScan: string): Promise<{ id: string }> {

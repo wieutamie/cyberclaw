@@ -3,6 +3,7 @@ import { supabase, memoryStore } from '../lib/supabase.js';
 import { vtClient, VirusTotalError } from '../lib/virustotal/client.js';
 import { mapVendorResults, aggregateStats } from '../lib/virustotal/mappers.js';
 import { calculateVerdict } from '../lib/virustotal/verdict.js';
+import { vtHashCache } from '../lib/virustotal/hashCache.js';
 import { ApiKeyService } from './apiKey.service.js';
 import { SettingsService } from './settings.service.js';
 import { AppError } from '../middleware/errorHandler.js';
@@ -104,6 +105,15 @@ export class ScanService {
     // up directly returns a full report in ~1s, versus uploading and waiting
     // 30-60s for a fresh analysis. Only fall through to the upload when VT has
     // genuinely never seen the file (404).
+
+    // Cache check: if we've already scanned this exact file within TTL,
+    // return the cached result immediately — zero VT API calls.
+    const cachedFile = vtHashCache.get(sha256);
+    if (cachedFile) {
+      logger.info({ sha256 }, 'File scan served from hash cache');
+      return cachedFile;
+    }
+
     try {
       const existing = await vtClient.getFileReport(apiKey, sha256);
       const attrs = existing?.data?.attributes;
@@ -115,6 +125,8 @@ export class ScanService {
         );
         completed.raw_payload = existing.data;
         await this.updateScan(scanId, completed);
+        // Populate cache so future identical files skip the VT call.
+        vtHashCache.set(sha256, { ...initialRecord, ...completed });
         return { ...initialRecord, ...completed };
       }
     } catch (err) {
@@ -255,6 +267,15 @@ export class ScanService {
 
     await this.saveScan(initialRecord);
 
+    // Cache check for hash scan: reuse a previous VT report if still valid.
+    if (cleanHash.length === 64) {
+      const cachedHash = vtHashCache.get(cleanHash);
+      if (cachedHash) {
+        logger.info({ hash: cleanHash }, 'Hash scan served from cache');
+        return cachedHash;
+      }
+    }
+
     try {
       const res = await vtClient.getFileReport(apiKey, cleanHash);
       const attrs = res?.data?.attributes || {};
@@ -285,6 +306,8 @@ export class ScanService {
       };
 
       await this.updateScan(scanId, updated);
+      // Populate cache so future identical hashes skip the VT call.
+      if (cleanHash.length === 64) vtHashCache.set(cleanHash, { ...initialRecord, ...updated });
       return { ...initialRecord, ...updated };
     } catch (err: any) {
       if (err instanceof VirusTotalError && err.code === 'NOT_FOUND') {

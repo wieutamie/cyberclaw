@@ -24,6 +24,11 @@ const hashSchema = z.object({
 scanRouter.use(anonSession);
 scanRouter.use(scanLimiter);
 
+// --- File scan -------------------------------------------------------------
 scanRouter.post('/file', upload.single('file'), ScanController.scanFile);
+
+// --- URL scan --------------------------------------------------------------
 scanRouter.post('/url', validate({ body: urlSchema }), ScanController.scanUrl);
+
+// --- Hash lookup -----------------------------------------------------------
 scanRouter.post('/hash', validate({ body: hashSchema }), ScanController.scanHash);
