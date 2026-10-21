@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Same-origin /api/* proxy for the Vercel frontend project.
  *
  * The primary API base is `VITE_API_BASE_URL` (cross-origin, used by every
@@ -54,8 +54,6 @@ const SKIP_RESPONSE_HEADERS = new Set([
 ]);
 
 export default async (req: Req, res: Res) => {
-  // `req.url` in Vercel Node functions is the relative path WITH query,
-  // e.g. `/api/scan/file` — forward it untouched to the API project.
   const path = req.url || '/api';
 
   const headers: Record<string, string> = {};
@@ -65,9 +63,6 @@ export default async (req: Req, res: Res) => {
     else if (value !== undefined) headers[key] = String(value);
   }
 
-  // Bare Vercel Node functions do NOT parse the body (no `req.body` /
-  // `req.rawBody`), so read the raw stream ourselves. Forwarding the raw
-  // bytes keeps multipart boundaries intact for file uploads.
   let body: BodyInit | undefined;
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     const chunks: Buffer[] = [];
@@ -77,6 +72,41 @@ export default async (req: Req, res: Res) => {
       body = raw as unknown as BodyInit;
       delete headers['content-length'];
     }
+  }
+
+  // Handle OPTIONS preflight ourselves so the browser sees valid CORS headers
+  // instead of getting a bare 204 from Vercel's static host.
+  if (req.method === 'OPTIONS') {
+    const origin = headers['origin'];
+    if (!origin) {
+      // No Origin header — not a browser preflight, just proxy it through.
+      const upstream = await fetch(`${API_ORIGIN}${path}`, { method: 'OPTIONS', headers });
+      res.status(upstream.status);
+      res.end(await upstream.text());
+      return;
+    }
+    // Mirror the backend's allowed-origin logic. The backend rejects origins not
+    // in CLIENT_URL with 403, so we do the same here (without CORS headers).
+    // Allowed origins get a full preflight response.
+    try {
+      const upstream = await fetch(`${API_ORIGIN}${path}`, { method: 'OPTIONS', headers });
+      const data = await upstream.text();
+      if (upstream.status === 403) {
+        res.status(403).end(data);
+        return;
+      }
+      // Build a preflight response matching the backend's CORS policy.
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.setHeader('Access-Control-Expose-Headers', 'X-Anon-Session');
+      res.setHeader('Access-Control-Max-Age', '86400');
+      res.status(204).end();
+    } catch {
+      res.status(502).json({ ok: false, error: { message: 'API proxy unavailable.', code: 'PROXY_ERROR' } });
+    }
+    return;
   }
 
   let upstream: Response;
@@ -94,11 +124,9 @@ export default async (req: Req, res: Res) => {
 
   for (const [key, value] of Object.entries(upstream.headers)) {
     if (SKIP_RESPONSE_HEADERS.has(key.toLowerCase())) continue;
-    
     res.setHeader(key, value as string);
   }
 
   res.status(upstream.status);
   res.end(await upstream.text());
 };
-
