@@ -26,6 +26,9 @@ export const ScanPage: React.FC = () => {
   // Play the one-shot "gemash" reveal the first time the finished result lands.
   const [showReveal, setShowReveal] = useState(false);
   const revealShown = useRef(false);
+  // Auto-open the full report only once per scan, otherwise returning from the
+  // report page would immediately bounce the user back into it.
+  const autoOpenedReport = useRef(false);
 
   // Final state = no need to keep waiting / polling.
   const isFinal = (state?: ScanState) =>
@@ -37,9 +40,14 @@ export const ScanPage: React.FC = () => {
       const data = await api.getScanDetails(scanId);
       setScan(data);
 
-      // Check auto-open preference
-      if (settings.auto_open_report && data.state === 'completed') {
-        navigate(`/scan/${scanId}/report`);
+      // Check auto-open preference (once per scan — see ref comment above).
+      if (
+        settings.auto_open_report &&
+        data.state === 'completed' &&
+        !autoOpenedReport.current
+      ) {
+        autoOpenedReport.current = true;
+        navigate(`/scan/${scanId}/report`, { replace: true });
       }
     } catch (err: any) {
       setError(err.message || 'Scan not found');
@@ -49,6 +57,8 @@ export const ScanPage: React.FC = () => {
   };
 
   useEffect(() => {
+    // New scan id → allow the auto-open behaviour again for this scan.
+    autoOpenedReport.current = false;
     fetchScan();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scanId]);

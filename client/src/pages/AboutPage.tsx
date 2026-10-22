@@ -20,7 +20,7 @@ export const AboutPage: React.FC = () => {
     { label: t('about.specLanguages'), value: t('about.specLanguagesValue') },
   ];
 
-  const stack = ['React', 'TypeScript', 'Vite', 'Tailwind CSS', 'Express', 'Supabase', 'VirusTotal API v3'];
+  const stack = ['React', 'TypeScript', 'Vite', 'Tailwind CSS', 'Express', 'Supabase', 'VirusTotal API'];
 
   return (
     <div className="max-w-3xl mx-auto flex flex-col gap-6 animate-fade-rise">

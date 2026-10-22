@@ -211,4 +211,29 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates),
     }),
+
+  // VirusTotal API Key (user's own key to bypass shared quota)
+  getVtApiKeyMeta: async (): Promise<{ hasKey: boolean; last4: string | null }> =>
+    request<{ hasKey: boolean; last4: string | null }>('/settings/api-key'),
+
+  saveVtApiKey: async (apiKey: string): Promise<{ message: string; hasKey: boolean; last4: string }> =>
+    request<{ message: string; hasKey: boolean; last4: string }>('/settings/api-key', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiKey }),
+    }),
+
+  removeVtApiKey: async (): Promise<{ message: string }> =>
+    request<{ message: string }>('/settings/api-key', { method: 'DELETE' }),
+
+  /**
+   * Validates a key against VirusTotal. Pass a key to test one that isn't saved
+   * yet; omit it to test the key already stored for this session.
+   */
+  testVtApiKey: async (apiKey?: string): Promise<{ valid: boolean }> =>
+    request<{ valid: boolean }>('/settings/api-key/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(apiKey ? { apiKey } : {}),
+    }),
 };

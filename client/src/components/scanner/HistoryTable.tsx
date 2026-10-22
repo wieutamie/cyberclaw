@@ -19,6 +19,7 @@ import { api } from '../../lib/api.js';
 import { formatDateTime, truncate } from '../../lib/format.js';
 import { useSettings } from '../../context/SettingsContext.js';
 import { LoadingState } from '../ui/LoadingState.js';
+import { Modal } from '../ui/Modal.js';
 import { ScanRecord, ScanType, Verdict } from '../../types/index.js';
 
 export const HistoryTable: React.FC = () => {
@@ -28,14 +29,29 @@ export const HistoryTable: React.FC = () => {
 
   const [items, setItems] = useState<ScanRecord[]>([]);
   const [total, setTotal] = useState(0);
+  // Tracks whether the account has *any* history (independent of the active
+  // filters) so the "clear all" action stays reachable even when the current
+  // filter yields zero rows.
+  const [hasHistory, setHasHistory] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   const [loading, setLoading] = useState(true);
+
+  // Clear-all flow
+  const [showClearModal, setShowClearModal] = useState(false);
+  const [clearConfirmText, setClearConfirmText] = useState('');
+  const [clearing, setClearing] = useState(false);
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<ScanType | undefined>(undefined);
   const [verdictFilter, setVerdictFilter] = useState<Verdict | undefined>(undefined);
+
+  const showToast = (msg: string, type: 'success' | 'error' = 'success', ms = 3000) => {
+    setToast({ msg, type });
+    window.setTimeout(() => setToast(null), ms);
+  };
 
   const loadHistory = async () => {
     setLoading(true);
@@ -49,6 +65,9 @@ export const HistoryTable: React.FC = () => {
       });
       setItems(data.items);
       setTotal(data.total);
+      const unfiltered = !searchQuery.trim() && !typeFilter && !verdictFilter;
+      if (unfiltered) setHasHistory(data.total > 0);
+      else if (data.total > 0) setHasHistory(true);
     } catch (err) {
       console.error('Failed to load scan history:', err);
     } finally {
@@ -68,9 +87,34 @@ export const HistoryTable: React.FC = () => {
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (window.confirm(t('history.deleteConfirm'))) {
+    if (!window.confirm(t('history.deleteConfirm'))) return;
+    try {
       await api.deleteScan(id);
+      // If we just removed the last row on this page, step back a page.
+      if (items.length === 1 && page > 1) setPage(page - 1);
+      else loadHistory();
+    } catch (err: any) {
+      showToast(err?.message || t('history.deleteFailed'), 'error', 4000);
+    }
+  };
+
+  const handleClearAll = async () => {
+    if (clearConfirmText !== 'DELETE' || clearing) return;
+    setClearing(true);
+    try {
+      await api.clearAllHistory();
+      setShowClearModal(false);
+      setClearConfirmText('');
+      setPage(1);
+      setItems([]);
+      setTotal(0);
+      setHasHistory(false);
+      showToast(t('preferences.historyCleared'));
       loadHistory();
+    } catch (err: any) {
+      showToast(err?.message || t('history.clearFailed'), 'error', 4000);
+    } finally {
+      setClearing(false);
     }
   };
 
@@ -176,7 +220,7 @@ export const HistoryTable: React.FC = () => {
             }}
             className="px-3 py-1.5 rounded-btn bg-surface-alt border border-surface-alt text-xs text-white focus:border-brand-accent focus:outline-none"
           >
-            <option value="">Semua Tipe</option>
+            <option value="">{t('history.allTypes')}</option>
             <option value="file">File</option>
             <option value="url">URL</option>
             <option value="hash">Hash</option>
@@ -190,11 +234,27 @@ export const HistoryTable: React.FC = () => {
             }}
             className="px-3 py-1.5 rounded-btn bg-surface-alt border border-surface-alt text-xs text-white focus:border-brand-accent focus:outline-none"
           >
-            <option value="">Semua Status</option>
+            <option value="">{t('history.allStatus')}</option>
             <option value="danger">Danger</option>
             <option value="warning">Warning</option>
             <option value="clean">Clean</option>
           </select>
+
+          {hasHistory && (
+            <button
+              type="button"
+              onClick={() => {
+                setClearConfirmText('');
+                setShowClearModal(true);
+              }}
+              title={t('history.clearAll')}
+              aria-label={t('history.clearAll')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-btn bg-status-danger/15 border border-status-danger/40 text-status-danger text-xs font-semibold whitespace-nowrap hover:bg-status-danger hover:text-white transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">{t('history.clearAll')}</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -299,7 +359,7 @@ export const HistoryTable: React.FC = () => {
           {/* Pagination */}
           <div className="flex items-center justify-between px-2 pt-2 text-xs text-muted">
             <span>
-              Halaman {page} dari {totalPages} ({total} scan)
+              {t('history.pageInfo', { page, totalPages, total })}
             </span>
             <div className="flex items-center gap-1">
               <button
@@ -319,6 +379,70 @@ export const HistoryTable: React.FC = () => {
             </div>
           </div>
         </>
+      )}
+
+      {/* Clear-all confirmation */}
+      <Modal
+        isOpen={showClearModal}
+        onClose={() => {
+          setShowClearModal(false);
+          setClearConfirmText('');
+        }}
+        labelledBy="history-clear-title"
+        panelClassName="max-w-md border-status-danger"
+      >
+        <div className="flex items-center gap-3 text-status-danger">
+          <AlertTriangle className="w-6 h-6 shrink-0" />
+          <h3 id="history-clear-title" className="text-lg font-bold">
+            {t('preferences.clearHistory')}
+          </h3>
+        </div>
+
+        <p className="text-sm text-gray-300">{t('preferences.clearHistoryWarning')}</p>
+
+        <p className="text-xs text-muted font-medium">{t('preferences.clearHistoryConfirm')}:</p>
+
+        <input
+          type="text"
+          value={clearConfirmText}
+          onChange={(e) => setClearConfirmText(e.target.value)}
+          placeholder="DELETE"
+          className="px-3.5 py-2.5 rounded-btn bg-surface-alt border border-status-danger font-mono text-center text-sm font-bold text-white focus:outline-none"
+        />
+
+        <div className="flex justify-end gap-3 mt-2">
+          <button
+            onClick={() => {
+              setShowClearModal(false);
+              setClearConfirmText('');
+            }}
+            className="px-4 py-2 rounded-btn bg-surface-alt text-white text-xs font-medium"
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            disabled={clearConfirmText !== 'DELETE' || clearing}
+            onClick={handleClearAll}
+            className="px-4 py-2 rounded-btn bg-status-danger text-white text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-status-danger/80"
+          >
+            {clearing ? t('common.loading') : t('preferences.deletePermanently')}
+          </button>
+        </div>
+      </Modal>
+
+      {toast && (
+        <div
+          className={`fixed bottom-6 right-6 z-[110] px-4 py-3 rounded-xl font-bold text-sm shadow-xl flex items-center gap-2 animate-in slide-in-from-bottom-2 ${
+            toast.type === 'error' ? 'bg-status-danger text-white' : 'bg-status-clean text-bg'
+          }`}
+        >
+          {toast.type === 'error' ? (
+            <AlertTriangle className="w-5 h-5 shrink-0" />
+          ) : (
+            <ShieldCheck className="w-5 h-5 shrink-0" />
+          )}
+          <span>{toast.msg}</span>
+        </div>
       )}
     </div>
   );

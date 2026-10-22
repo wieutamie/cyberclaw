@@ -99,10 +99,16 @@ export const Dropzone: React.FC<DropzoneProps> = ({
   };
 
   const handleConfirmPrivacy = async () => {
-    if (dontShowAgain) {
-      await updateSettings({ show_upload_warning: false });
-    }
     setShowPrivacyModal(false);
+    // Persisting "don't show again" must never block the scan itself — if the
+    // settings call fails we still proceed with the scan the user asked for.
+    if (dontShowAgain) {
+      try {
+        await updateSettings({ show_upload_warning: false });
+      } catch {
+        // Non-fatal: the warning will simply appear again next time.
+      }
+    }
     if (selectedFile) {
       onScan(selectedFile);
     }

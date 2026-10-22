@@ -16,11 +16,11 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ isOpen, onClose })
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const items = [
-    { path: '/dashboard', label: t('common.dashboard'), icon: LayoutDashboard, divider: false },
-    { path: '/analytics', label: t('common.analytics'), icon: BarChart3, divider: false },
-    { path: '/preferences', label: t('common.preferences'), icon: Sliders, divider: true },
-    { path: '/help', label: t('common.help'), icon: BookOpen, divider: true },
-    { path: '/about', label: t('common.about'), icon: Info, divider: false },
+    { path: '/dashboard', label: t('common.dashboard'), icon: LayoutDashboard },
+    { path: '/analytics', label: t('common.analytics'), icon: BarChart3 },
+    { path: '/preferences', label: t('common.preferences'), icon: Sliders },
+    { path: '/help', label: t('common.help'), icon: BookOpen },
+    { path: '/about', label: t('common.about'), icon: Info },
   ];
   const total = items.length;
 
@@ -89,43 +89,37 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ isOpen, onClose })
       role="menu"
       id="app-nav-menu"
       aria-label="Navigation"
-      className="absolute right-0 top-[calc(100%+10px)] w-64 bg-surface border border-white/10 rounded-card shadow-[0_16px_40px_rgba(0,0,0,0.5)] py-2 z-50 origin-top-right animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-150"
+      className="absolute right-0 top-[calc(100%+10px)] w-60 bg-surface border border-white/10 rounded-card shadow-[0_16px_40px_rgba(0,0,0,0.5)] p-1.5 z-50 origin-top-right animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-150"
     >
-      <div className="flex flex-col">
+      <div className="flex flex-col gap-0.5">
         {items.map((item, index) => {
           const isActive = location.pathname.startsWith(item.path);
           const Icon = item.icon;
           return (
-            <React.Fragment key={item.path}>
-              {item.divider && index > 0 && (
-                <div className="h-px bg-white/10 my-1.5 mx-2" role="separator" aria-hidden="true" />
-              )}
-              <button
-                role="menuitem"
-                type="button"
-                ref={(el) => { itemRefs.current[index] = el; }}
-                tabIndex={-1}
-                onKeyDown={(e) => handleMenuKeyDown(e, index)}
-                onClick={() => go(item.path)}
-                aria-current={isActive ? 'page' : undefined}
-                style={{ animationDelay: `${index * 45}ms` }}
-                className={`group animate-in fade-in slide-in-from-right-2 duration-200 fill-mode-both flex items-center gap-3 px-4 py-3 text-sm font-medium transition-all duration-150 text-left w-full border-l-4 focus:outline-none focus-visible:bg-surface-alt ${
-                  isActive
-                    ? 'border-brand-accent bg-surface-alt text-white'
-                    : 'border-transparent text-gray-300 hover:bg-surface-alt hover:text-white hover:border-brand-accent/40'
+            <button
+              key={item.path}
+              role="menuitem"
+              type="button"
+              ref={(el) => { itemRefs.current[index] = el; }}
+              tabIndex={-1}
+              onKeyDown={(e) => handleMenuKeyDown(e, index)}
+              onClick={() => go(item.path)}
+              aria-current={isActive ? 'page' : undefined}
+              style={{ animationDelay: `${index * 45}ms` }}
+              className={`group animate-in fade-in slide-in-from-right-2 duration-200 fill-mode-both flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent ${
+                isActive
+                  ? 'bg-brand-accent/20 text-white'
+                  : 'text-gray-300 hover:bg-surface-alt hover:text-white'
+              }`}
+            >
+              <Icon
+                className={`w-4 h-4 shrink-0 ${
+                  isActive ? 'text-brand-accent' : 'text-muted group-hover:text-brand-accent'
                 }`}
-              >
-                <Icon
-                  className={`w-4 h-4 transition-transform duration-200 group-hover:scale-110 group-hover:translate-x-0.5 ${
-                    isActive ? 'text-brand-accent' : 'text-muted group-hover:text-brand-accent'
-                  }`}
-                />
-                <span className="flex-1">{item.label}</span>
-                {isActive && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-brand-accent animate-live-dot" />
-                )}
-              </button>
-            </React.Fragment>
+              />
+              <span className="flex-1">{item.label}</span>
+              {isActive && <span className="w-1.5 h-1.5 rounded-full bg-brand-accent" />}
+            </button>
           );
         })}
       </div>

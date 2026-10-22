@@ -109,16 +109,10 @@ export const ScanBuffers: React.FC<ScanBuffersProps> = ({
 
   return (
     <div className="flex items-center justify-center min-h-[60vh] p-4 sm:p-6 animate-in fade-in">
-      {/* Pink translucent panel — the scanning "stage". Everything inside is
-          layered above a giant, faint BufferCat watermark so the character has
-          a soft backdrop instead of floating on the bare page background. */}
-      <div className="relative w-full max-w-3xl overflow-hidden rounded-3xl border border-white/10 bg-[#602F4B]/55 px-6 py-10 sm:px-10 sm:py-14 text-center shadow-[0_18px_60px_-18px_rgba(255,0,144,0.35)] backdrop-blur-sm">
-        {/* Decorative pink glow bleeding in from the top edge. */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -top-24 left-1/2 h-64 w-[130%] -translate-x-1/2 rounded-full opacity-40 blur-3xl"
-          style={{ background: 'radial-gradient(circle, rgba(255,0,144,0.45) 0%, transparent 70%)' }}
-        />
+      {/* Translucent panel — the scanning "stage". Kept flat and see-through:
+          no coloured edge glow, no tinted drop shadow, just a soft frosted
+          surface so the BufferCat illustration stays the focal point. */}
+      <div className="relative w-full max-w-4xl overflow-hidden rounded-3xl border border-white/10 bg-[#602F4B]/25 px-6 py-12 sm:px-14 sm:py-16 text-center backdrop-blur-sm">
 
         {/* ---- Foreground content ---- (the oversized BufferCat watermark that
             sat behind this content was removed — it read as an ugly dark blob) */}
@@ -129,7 +123,7 @@ export const ScanBuffers: React.FC<ScanBuffersProps> = ({
             <img
               src="/BufferCat.svg"
               alt="BufferCat"
-              className={`w-40 sm:w-52 h-auto object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)] ${
+              className={`w-28 sm:w-36 h-auto object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)] ${
                 finishing ? 'animate-cat-spin' : 'animate-cat-swing'
               }`}
             />

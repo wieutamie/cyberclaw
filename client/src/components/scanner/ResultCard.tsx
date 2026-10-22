@@ -189,24 +189,31 @@ export const ResultCard: React.FC<ResultCardProps> = ({ scan, onScanAnother }) =
 
   const itemSha256 = scan.item_sha256 || scan.item_meta?.sha256;
 
-  // Donut chart data (per PRD §4.1): danger #FF0000, warning #FF7300, clean
-  // #11FF00. The green "Clean" slice intentionally merges `harmless` +
-  // `undetected` — both mean "no threat found" — so a clean scan renders as a
-  // full green ring instead of a confusing grey gap next to a "0% detected"
-  // center. The muted neutral "Other" slice is reserved for genuinely unknown
-  // outcomes (timeout/failure/unsupported) so an unknown result is never
-  // mistaken for "safe". Buckets always sum to the full engine count (71).
-  // Only non-zero slices are plotted.
+  // Raw per-category buckets for the right-hand status cards. These mirror
+  // VirusTotal's own labels exactly (harmless = engines that explicitly said
+  // "no threat", undetected = engines with no opinion, etc.) so the cards stay
+  // a faithful breakdown even though the ring above is percentage-based.
   const otherCount =
     (stats.timeout || 0) +
     (stats.failure || 0) +
     (stats.unsupported || 0);
-  const cleanCount = stats.harmless + stats.undetected;
+
+  // Donut chart data (per PRD §4.1): danger #FF0000, warning #FF7300, clean
+  // #11FF00. The ring is driven by the *detection percentage* — only engines
+  // that actually flagged the item get a coloured arc (red = malicious,
+  // orange = suspicious) and every remaining engine is green. That is the
+  // correct reading of the verdict rules in server/lib/virustotal/verdict.ts,
+  // where only `malicious` and `suspicious` can downgrade a result: harmless,
+  // undetected, timeout, failure and unsupported are all non-threats. So a
+  // clean scan renders as a fully green ring with no grey gap, a single
+  // suspicious hit leaves a thin orange sliver, and a danger scan shows red.
+  // (The right-hand cards still break the non-threat engines out in detail.)
+  const flaggedCount = (stats.malicious || 0) + (stats.suspicious || 0);
+  const remainderClean = Math.max(0, totalEnginesCount - flaggedCount);
   const donutData = [
-    { name: t('scan.verdictDanger'), value: stats.malicious, color: '#FF0000' },
-    { name: t('scan.verdictWarning'), value: stats.suspicious, color: '#FF7300' },
-    { name: t('scan.verdictClean'), value: cleanCount, color: '#11FF00' },
-    { name: t('scan.verdictOther'), value: otherCount, color: '#64748B' },
+    { name: t('scan.verdictDanger'), value: stats.malicious || 0, color: '#FF0000' },
+    { name: t('scan.verdictWarning'), value: stats.suspicious || 0, color: '#FF7300' },
+    { name: t('scan.verdictClean'), value: remainderClean, color: '#11FF00' },
   ].filter((d) => d.value > 0);
 
   // Right-column status cards — one per VirusTotal verdict bucket. Colored
@@ -235,13 +242,19 @@ export const ResultCard: React.FC<ResultCardProps> = ({ scan, onScanAnother }) =
     {
       key: 'clean',
       label: t('scan.verdictClean'),
-      count: stats.harmless,
+      // `undetected` counts as clean per the verdict rules (only malicious /
+      // suspicious can downgrade a result), so it belongs in the green card —
+      // otherwise the four cards never add up to the engine total.
+      count: (stats.harmless || 0) + (stats.undetected || 0),
       headerClass: 'bg-status-clean',
       desc: t('scan.cardCleanDesc'),
     },
     {
       key: 'undetected',
       label: t('scan.verdictOther'),
+      // Engines that returned no usable answer at all (timeout / failure /
+      // unsupported). Shown separately for transparency, but they are still
+      // non-threats, which is why the ring above stays green for them.
       count: otherCount,
       headerClass: 'bg-muted',
       desc: t('scan.cardUndetectedDesc'),
@@ -249,25 +262,8 @@ export const ResultCard: React.FC<ResultCardProps> = ({ scan, onScanAnother }) =
   ];
 
   return (
-    <div className="relative w-full max-w-[1320px] mx-auto bg-bg rounded-card p-5 sm:p-8 lg:p-10 shadow-card overflow-hidden result-card-pop">
-      {/* Very faint CyberClaw watermark behind the content (tinted #FCEEEA).
-          Kept extremely subtle so it never competes with the verdict text. */}
-      <span
-        aria-hidden="true"
-        className="pointer-events-none select-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[440px] max-w-[80%] aspect-[6/5] opacity-[0.02] bg-[#FCEEEA]"
-        style={{
-          WebkitMaskImage: "url('/LogoCC.svg')",
-          maskImage: "url('/LogoCC.svg')",
-          WebkitMaskRepeat: 'no-repeat',
-          maskRepeat: 'no-repeat',
-          WebkitMaskPosition: 'center',
-          maskPosition: 'center',
-          WebkitMaskSize: 'contain',
-          maskSize: 'contain',
-        }}
-      />
-
-      <div className="relative z-10 animate-fade-rise flex flex-col lg:flex-row items-center lg:items-stretch gap-8 lg:gap-10">
+    <div className="relative w-full max-w-[1320px] mx-auto bg-[#17183B]/45 border border-white/10 backdrop-blur-sm rounded-card p-5 sm:p-8 lg:p-10 shadow-card overflow-hidden result-card-pop">
+      <div className="relative z-10 animate-fade-rise flex flex-col lg:flex-row items-center lg:items-stretch gap-8 lg:gap-12">
         {/* ── Left: illustration + file identity + report CTA ───────────── */}
         <div className="flex flex-col items-center justify-center gap-4 w-full lg:w-80 shrink-0 text-center">
           <img
@@ -386,8 +382,10 @@ export const ResultCard: React.FC<ResultCardProps> = ({ scan, onScanAnother }) =
           </button>
         </div>
 
-        {/* ── Right: per-status cards (Danger / Warning / Clean / Other) ── */}
-        <div className="flex flex-col gap-3 w-full lg:w-64 shrink-0 justify-center">
+        {/* ── Right: per-status cards (Danger / Warning / Clean / Other) ──
+            Kept off the card edge with its own inset so the column never looks
+            glued to the border, and given a slightly wider gap between cards. */}
+        <div className="flex flex-col gap-3.5 w-full lg:w-64 shrink-0 justify-center lg:pl-4 lg:pr-2">
           {statusCards.map((card) => (
             <div key={card.key} className="rounded-2xl overflow-hidden shadow-soft">
               <div className={`${card.headerClass} h-11 flex items-center justify-center`}>
