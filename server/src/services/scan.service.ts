@@ -10,6 +10,7 @@ import { AppError } from '../middleware/errorHandler.js';
 import { ScanRecord } from '../types/index.js';
 import { logger } from '../lib/logger.js';
 import { env } from '../config/env.js';
+import { assertConsistentStats } from '../lib/statsConsistency.js';
 
 export class ScanService {
   /**
@@ -658,6 +659,8 @@ export class ScanService {
   }
 
   private static async saveScan(scan: ScanRecord): Promise<void> {
+    assertConsistentStats(scan.stats, scan.vendor_results);
+
     // Selalu simpan ke memoryStore agar scan selalu ditemukan
     memoryStore.scans.set(scan.id, scan);
 
@@ -674,6 +677,15 @@ export class ScanService {
     scanId: string,
     updates: Partial<ScanRecord>
   ): Promise<void> {
+    // Guard: `stats` and `vendor_results` are written together, and the UI
+    // renders both side by side ("5 / N Vendor" plus the engine cards). If the
+    // totals disagree the report is self-contradictory, which is exactly the
+    // bug that produced rows showing 90 engines next to 71 vendor cards.
+    // Both fields must always be derived from the same vendor list.
+    if (updates.stats && Array.isArray(updates.vendor_results)) {
+      assertConsistentStats(updates.stats, updates.vendor_results);
+    }
+
     const existing = memoryStore.scans.get(scanId);
     if (existing) {
       memoryStore.scans.set(scanId, { ...existing, ...updates });
