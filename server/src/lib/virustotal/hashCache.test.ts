@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { VTHashCache } from './hashCache.js';
-import { ScanRecord } from '../types/index.js';
+import { ScanRecord } from '../../types/index.js';
 
 const record = (over: Partial<ScanRecord> = {}): ScanRecord => ({
   id: 'original-id',
