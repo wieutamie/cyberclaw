@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ScanRecord, ScanStats } from '../../types/index.js';
-import { totalEngines } from '../../lib/stats.js';
+import { totalEngines, respondedEngines, detectionPercent } from '../../lib/stats.js';
 
 interface ReportSidebarProps {
   scan: ScanRecord;
@@ -37,8 +37,11 @@ export const ReportSidebar: React.FC<ReportSidebarProps> = ({ scan }) => {
   const stats = scan.stats || EMPTY_STATS;
 
   const totalEnginesCount = totalEngines(stats);
-  const detected = stats.malicious + stats.suspicious;
-  const detectedPercent = totalEnginesCount > 0 ? Math.round((detected / totalEnginesCount) * 100) : 0;
+  const respondedCount = respondedEngines(stats);
+  // Detection rate is measured against engines that actually answered, so a
+  // scan with many timed-out engines doesn't understate the score. Shared
+  // helper keeps this in lockstep with the scan result card.
+  const detectedPercent = Math.round(detectionPercent(stats));
 
   // The mockup surfaces a few "safe looking" engines as a quick reassurance list.
   const miniRows: MiniRow[] = useMemo(() => {
@@ -56,7 +59,9 @@ export const ReportSidebar: React.FC<ReportSidebarProps> = ({ scan }) => {
   }, [vendors]);
 
   // Donut geometry — a simple conic-gradient ring, no chart library needed.
-  const detectedAngle = (detectedPercent / 100) * 360;
+  // Use the raw (unrounded) rate for the angle so the arc stays accurate even
+  // when the displayed integer rounds down to 0%.
+  const detectedAngle = (detectionPercent(stats) / 100) * 360;
 
   const dangerCount = stats.malicious;
   const warningCount = stats.suspicious;
@@ -128,7 +133,9 @@ export const ReportSidebar: React.FC<ReportSidebarProps> = ({ scan }) => {
             <span className="text-[11px] font-semibold text-muted mt-0.5">
               Detected
             </span>
-            <span className="text-[10px] text-muted">Total Scan</span>
+            <span className="text-[10px] text-muted">
+              {t('scan.respondingEnginesLabel', { total: respondedCount })}
+            </span>
           </div>
         </div>
       </div>

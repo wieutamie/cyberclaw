@@ -13,7 +13,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { formatDateTime, formatBytes, truncate } from '../../lib/format.js';
-import { totalEngines } from '../../lib/stats.js';
+import { totalEngines, respondedEngines, flaggedEngines, detectionPercent } from '../../lib/stats.js';
 import { isErrorState } from '../../lib/scanState.js';
 import { playCatSound } from '../../lib/catSounds.js';
 import { useSettings } from '../../context/SettingsContext.js';
@@ -63,9 +63,14 @@ export const ResultCard: React.FC<ResultCardProps> = ({ scan, onScanAnother }) =
   };
 
   const totalEnginesCount = totalEngines(stats);
+  // Engines that actually answered (timeout/failure/unsupported excluded) — this
+  // is the denominator for every percentage on the card.
+  const respondedCount = respondedEngines(stats);
+  const flaggedCount = flaggedEngines(stats);
   // "Detected" = every engine that flagged a threat (malicious + suspicious),
-  // so the donut center matches the verdict: 0% only when nothing flagged.
-  const ratioPercent = totalEnginesCount > 0 ? ((stats.malicious + stats.suspicious) / totalEnginesCount) * 100 : 0;
+  // measured against the engines that actually responded, so a scan with many
+  // timed-out engines doesn't understate the detection rate.
+  const ratioPercent = detectionPercent(stats);
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -205,15 +210,19 @@ export const ResultCard: React.FC<ResultCardProps> = ({ scan, onScanAnother }) =
   // Donut chart data (per PRD §4.1): danger #FF0000, warning #FF7300, clean
   // #11FF00. The ring is driven by the *detection percentage* — only engines
   // that actually flagged the item get a coloured arc (red = malicious,
-  // orange = suspicious) and every remaining engine is green. That is the
-  // correct reading of the verdict rules in server/lib/virustotal/verdict.ts,
-  // where only `malicious` and `suspicious` can downgrade a result: harmless,
-  // undetected, timeout, failure and unsupported are all non-threats. So a
-  // clean scan renders as a fully green ring with no grey gap, a single
-  // suspicious hit leaves a thin orange sliver, and a danger scan shows red.
-  // (The right-hand cards still break the non-threat engines out in detail.)
-  const flaggedCount = (stats.malicious || 0) + (stats.suspicious || 0);
-  const remainderClean = Math.max(0, totalEnginesCount - flaggedCount);
+  // orange = suspicious) and every remaining *responding* engine is green.
+  // That is the correct reading of the verdict rules in
+  // server/lib/virustotal/verdict.ts, where only `malicious` and `suspicious`
+  // can downgrade a result: harmless, undetected, timeout, failure and
+  // unsupported are all non-threats.
+  //
+  // The green remainder is measured against engines that actually answered
+  // (`respondedCount`), so the three arcs always add up to exactly one full
+  // ring and the centre percentage is exactly the coloured share of the ring.
+  // Timeout/failure/unsupported engines are excluded from the ring entirely
+  // rather than being painted green as if they had cleared the file — the
+  // right-hand cards still report them separately for transparency.
+  const remainderClean = Math.max(0, respondedCount - flaggedCount);
   const donutData = [
     { name: t('scan.verdictDanger'), value: stats.malicious || 0, color: '#FF0000' },
     { name: t('scan.verdictWarning'), value: stats.suspicious || 0, color: '#FF7300' },
@@ -338,7 +347,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ scan, onScanAnother }) =
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       const d = payload[0].payload as { name: string; value: number; color: string };
-                      const pct = totalEnginesCount > 0 ? ((d.value / totalEnginesCount) * 100).toFixed(1) : '0.0';
+                      const pct = respondedCount > 0 ? ((d.value / respondedCount) * 100).toFixed(1) : '0.0';
                       return (
                         <div className="bg-surface-alt border border-surface px-3 py-1.5 rounded-lg shadow-lg text-xs">
                           <span className="font-semibold" style={{ color: d.color }}>
@@ -368,6 +377,12 @@ export const ResultCard: React.FC<ResultCardProps> = ({ scan, onScanAnother }) =
               </span>
             </div>
           </div>
+
+          {/* Denominator note: the percentage is measured against engines that
+              actually answered, which can be fewer than the total scanned. */}
+          <p className="text-[11px] text-white/45 -mt-3">
+            {t('scan.respondingEnginesNote', { flagged: flaggedCount, total: respondedCount })}
+          </p>
 
           <p className={`text-sm sm:text-base font-semibold max-w-xs leading-relaxed ${verdictColor}`}>
             {verdictTagline}

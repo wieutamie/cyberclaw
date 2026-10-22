@@ -170,6 +170,8 @@
     "breakdownTitle": "Detection Breakdown",
     "detectionRatio": "Detection Ratio",
     "detectedLabel": "Detected",
+    "respondingEnginesNote": "{{flagged}} of {{total}} responding engines flagged this item",
+    "respondingEnginesLabel": "of {{total}} Engines",
     "taglineDanger": "Oh no.. your device is definitely going to cry.",
     "taglineWarning": "Hmm, something smells a bit fishy here...",
     "taglineClean": "Phew! Coast is clear, your files are safe.",

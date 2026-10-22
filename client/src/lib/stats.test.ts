@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { totalEngines } from './stats.js';
+import {
+  totalEngines,
+  respondedEngines,
+  flaggedEngines,
+  detectionPercent,
+} from './stats.js';
 
 describe('totalEngines', () => {
   it('sums ALL seven categories, not just the big four', () => {
@@ -51,5 +56,77 @@ describe('totalEngines', () => {
 
   it('tolerates partial stats objects', () => {
     expect(totalEngines({ malicious: 5 } as any)).toBe(5);
+  });
+});
+
+describe('respondedEngines', () => {
+  it('excludes timeout, failure and unsupported', () => {
+    expect(
+      respondedEngines({
+        malicious: 3,
+        suspicious: 0,
+        harmless: 10,
+        undetected: 27,
+        timeout: 20,
+        failure: 7,
+        unsupported: 3,
+      })
+    ).toBe(40);
+  });
+
+  it('counts undetected as a real answer', () => {
+    expect(respondedEngines({ undetected: 12 } as any)).toBe(12);
+  });
+
+  it('is 0 when nothing answered', () => {
+    expect(respondedEngines({ timeout: 5, failure: 2 } as any)).toBe(0);
+    expect(respondedEngines(undefined)).toBe(0);
+  });
+});
+
+describe('flaggedEngines', () => {
+  it('sums malicious and suspicious only', () => {
+    expect(
+      flaggedEngines({
+        malicious: 2,
+        suspicious: 3,
+        harmless: 50,
+        undetected: 10,
+      } as any)
+    ).toBe(5);
+  });
+});
+
+describe('detectionPercent', () => {
+  it('divides flagged by engines that responded, not by the total scanned', () => {
+    // 3 flags out of 70 scanned, but 30 engines timed out → 3/40 = 7.5%.
+    const stats = {
+      malicious: 3,
+      suspicious: 0,
+      harmless: 20,
+      undetected: 17,
+      timeout: 20,
+      failure: 7,
+      unsupported: 3,
+    };
+    expect(totalEngines(stats)).toBe(70);
+    expect(respondedEngines(stats)).toBe(40);
+    expect(detectionPercent(stats)).toBeCloseTo(7.5, 5);
+  });
+
+  it('is 0 when no engine responded instead of dividing by zero', () => {
+    expect(detectionPercent({ timeout: 9 } as any)).toBe(0);
+    expect(detectionPercent(null)).toBe(0);
+  });
+
+  it('is 0 for a fully clean scan and 100 when every engine flags', () => {
+    expect(
+      detectionPercent({ malicious: 0, suspicious: 0, harmless: 5, undetected: 5 } as any)
+    ).toBe(0);
+    expect(detectionPercent({ malicious: 10 } as any)).toBe(100);
+  });
+
+  it('counts suspicious towards the detection rate', () => {
+    expect(detectionPercent({ malicious: 0, suspicious: 1, harmless: 3 } as any)).toBe(25);
   });
 });
