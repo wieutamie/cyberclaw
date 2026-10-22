@@ -283,11 +283,35 @@ export class ScanService {
     await this.saveScan(initialRecord);
 
     // Cache check for hash scan: reuse a previous VT report if still valid.
+    // The cached record belongs to whoever scanned it first, so it must be
+    // cloned onto THIS user and THIS scan id. Returning it as-is would (a) hand
+    // one user another user's scan id, which then 404s for them, and (b) leave
+    // the `queued` row we just saved stuck forever, because nothing would ever
+    // complete it. That orphan is exactly the "stuck scan" we keep seeing.
     if (cleanHash.length === 64) {
       const cachedHash = vtHashCache.get(cleanHash);
       if (cachedHash) {
         logger.info({ hash: cleanHash }, 'Hash scan served from cache');
-        return cachedHash;
+        const reused: ScanRecord = {
+          ...cachedHash,
+          id: scanId,
+          user_id: userId,
+          item_label: cleanHash,
+          created_at: now,
+          completed_at: new Date().toISOString(),
+        };
+        // Persist only the payload fields; id/created_at are already correct on
+        // the `queued` row we saved above and must not be rewritten.
+        await this.updateScan(scanId, {
+          state: reused.state,
+          verdict: reused.verdict,
+          stats: reused.stats,
+          vendor_results: reused.vendor_results,
+          item_meta: reused.item_meta,
+          item_sha256: reused.item_sha256,
+          completed_at: reused.completed_at,
+        });
+        return reused;
       }
     }
 

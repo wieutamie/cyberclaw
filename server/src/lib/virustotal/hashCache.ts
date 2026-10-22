@@ -16,7 +16,7 @@ interface CacheEntry {
   expiresAt: number;
 }
 
-class VTHashCache {
+export class VTHashCache {
   private store = new Map<string, CacheEntry>();
 
   constructor(
