@@ -83,7 +83,7 @@ export const AnalyticsPage: React.FC = () => {
       ) : (
         <>
           {/* KPI Cards (4) */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5">
             <div className="animate-fade-rise bg-surface border border-surface-alt rounded-card p-5 shadow-card flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 hover:border-brand-accent/40 hover:shadow-[0_14px_36px_rgba(0,0,0,0.4)]">
               <div className="flex items-center justify-between text-muted mb-2">
                 <span className="text-xs font-semibold uppercase tracking-wider">
@@ -140,8 +140,8 @@ export const AnalyticsPage: React.FC = () => {
             in the range lands in exactly one of Danger / Warning / Clean /
             Not Found / Pending / Failed, which is the same sum the donut shows.
           */}
-          <div className="animate-fade-rise [animation-delay:200ms] grid grid-cols-3 gap-4">
-            <div className="bg-surface/60 border border-surface-alt rounded-xl px-4 py-3 flex items-center justify-between">
+          <div className="animate-fade-rise [animation-delay:200ms] grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-surface/60 border border-surface-alt rounded-xl px-5 py-3.5 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-muted">
                 <HelpCircle className="w-3.5 h-3.5" />
                 <span className="text-[11px] font-semibold uppercase tracking-wider">
@@ -153,7 +153,7 @@ export const AnalyticsPage: React.FC = () => {
               </span>
             </div>
 
-            <div className="bg-surface/60 border border-surface-alt rounded-xl px-4 py-3 flex items-center justify-between">
+            <div className="bg-surface/60 border border-surface-alt rounded-xl px-5 py-3.5 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-muted">
                 <Clock className="w-3.5 h-3.5" />
                 <span className="text-[11px] font-semibold uppercase tracking-wider">
@@ -165,7 +165,7 @@ export const AnalyticsPage: React.FC = () => {
               </span>
             </div>
 
-            <div className="bg-surface/60 border border-surface-alt rounded-xl px-4 py-3 flex items-center justify-between">
+            <div className="bg-surface/60 border border-surface-alt rounded-xl px-5 py-3.5 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-muted">
                 <XCircle className="w-3.5 h-3.5" />
                 <span className="text-[11px] font-semibold uppercase tracking-wider">

@@ -233,26 +233,26 @@ export const HistoryTable: React.FC = () => {
       </div>
 
       {/* Search & Filters Bar */}
-      <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
-        <form onSubmit={handleSearchSubmit} className="relative w-full sm:w-64">
+      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+        <form onSubmit={handleSearchSubmit} className="relative w-full sm:w-72">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t('history.searchPlaceholder')}
-            className="w-full pl-9 pr-4 py-2 rounded-btn bg-surface-alt border border-surface-alt text-white text-xs placeholder:text-muted focus:border-brand-accent focus:ring-1 focus:ring-brand-accent focus:outline-none"
+            className="w-full pl-10 pr-4 py-2.5 rounded-btn bg-surface-alt border border-surface-alt text-white text-xs placeholder:text-muted focus:border-brand-accent focus:ring-1 focus:ring-brand-accent focus:outline-none"
           />
-          <Search className="w-4 h-4 text-muted absolute left-3 top-2.5" />
+          <Search className="w-4 h-4 text-muted absolute left-3.5 top-3" />
         </form>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+        <div className="flex items-center gap-2.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
           <select
             value={typeFilter || ''}
             onChange={(e) => {
               setTypeFilter((e.target.value as ScanType) || undefined);
               setPage(1);
             }}
-            className="px-3 py-1.5 rounded-btn bg-surface-alt border border-surface-alt text-xs text-white focus:border-brand-accent focus:outline-none"
+            className="px-3.5 py-2.5 rounded-btn bg-surface-alt border border-surface-alt text-xs text-white focus:border-brand-accent focus:outline-none"
           >
             <option value="">{t('history.allTypes')}</option>
             <option value="file">File</option>
@@ -266,7 +266,7 @@ export const HistoryTable: React.FC = () => {
               setVerdictFilter((e.target.value as Verdict) || undefined);
               setPage(1);
             }}
-            className="px-3 py-1.5 rounded-btn bg-surface-alt border border-surface-alt text-xs text-white focus:border-brand-accent focus:outline-none"
+            className="px-3.5 py-2.5 rounded-btn bg-surface-alt border border-surface-alt text-xs text-white focus:border-brand-accent focus:outline-none"
           >
             <option value="">{t('history.allStatus')}</option>
             <option value="danger">Danger</option>

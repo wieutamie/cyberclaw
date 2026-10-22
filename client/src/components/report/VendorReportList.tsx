@@ -101,7 +101,20 @@ export const VendorReportList: React.FC<VendorReportListProps> = ({ vendors }) =
   }
 
   return (
-    <div className="grid grid-cols-1 gap-x-6 gap-y-1 md:grid-cols-3">
+    <div className="flex flex-col gap-4">
+      {/* Column legend — keeps the three-column scan readable at a glance. */}
+      <div className="flex items-center justify-between gap-3 border-b border-surface-alt pb-3">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] font-bold uppercase tracking-wider text-muted">
+          <span>Engine</span>
+          <span>Result</span>
+          <span>Status</span>
+        </div>
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+          {ordered.length} engines
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 gap-x-8 gap-y-1 md:grid-cols-3 lg:gap-x-10">
       {columns.map((column, colIndex) => (
         <div key={colIndex} className="flex flex-col gap-1">
           {column.map((vendor) => {
@@ -111,7 +124,7 @@ export const VendorReportList: React.FC<VendorReportListProps> = ({ vendors }) =
             return (
               <div
                 key={vendor.engine_name}
-                className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2"
+                className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-3 rounded-lg px-2 py-1.5 transition-colors hover:bg-surface/60"
               >
                 <span
                   className="text-[12.5px] font-semibold text-white truncate"
@@ -126,7 +139,7 @@ export const VendorReportList: React.FC<VendorReportListProps> = ({ vendors }) =
                   {resultText}
                 </span>
                 <span
-                  className={`text-[12px] font-semibold whitespace-nowrap text-right min-w-[76px] ${style.statusColor}`}
+                  className={`text-[12px] font-semibold whitespace-nowrap text-right min-w-[80px] ${style.statusColor}`}
                 >
                   {style.statusLabel}
                 </span>
@@ -135,6 +148,7 @@ export const VendorReportList: React.FC<VendorReportListProps> = ({ vendors }) =
           })}
         </div>
       ))}
+      </div>
     </div>
   );
 };

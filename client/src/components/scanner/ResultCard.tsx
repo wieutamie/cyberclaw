@@ -307,7 +307,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ scan, onScanAnother }) =
         </div>
 
         {/* ── Center: big donut verdict + summary + scan again ──────────── */}
-        <div className="flex flex-col items-center justify-center gap-5 w-full lg:flex-1 text-center">
+        <div className="flex flex-col items-center justify-center gap-4 w-full lg:flex-1 text-center">
           <div className="relative w-52 h-52 sm:w-60 sm:h-60">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -380,7 +380,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ scan, onScanAnother }) =
 
           {/* Denominator note: the percentage is measured against engines that
               actually answered, which can be fewer than the total scanned. */}
-          <p className="text-[11px] text-white/45 -mt-3">
+          <p className="text-[11px] text-white/45">
             {t('scan.respondingEnginesNote', { flagged: flaggedCount, total: respondedCount })}
           </p>
 
@@ -388,7 +388,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ scan, onScanAnother }) =
             {verdictTagline}
           </p>
 
-          <p className="text-xs text-white/55 max-w-xs leading-relaxed -mt-2">
+          <p className="text-xs text-white/55 max-w-xs leading-relaxed">
             {verdictDesc}
           </p>
 
@@ -404,7 +404,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ scan, onScanAnother }) =
         {/* ── Right: per-status cards (Danger / Warning / Clean / Other) ──
             Kept off the card edge with its own inset so the column never looks
             glued to the border, and given a slightly wider gap between cards. */}
-        <div className="flex flex-col gap-3.5 w-full lg:w-64 shrink-0 justify-center lg:pl-4 lg:pr-2">
+        <div className="flex flex-col gap-4 w-full lg:w-64 shrink-0 justify-center lg:pl-5 lg:pr-2">
           {statusCards.map((card) => (
             <div key={card.key} className="rounded-2xl overflow-hidden shadow-soft">
               <div className={`${card.headerClass} h-11 flex items-center justify-center`}>
@@ -418,12 +418,12 @@ export const ResultCard: React.FC<ResultCardProps> = ({ scan, onScanAnother }) =
                   {card.label}
                 </span>
               </div>
-              <div className="bg-surface-alt px-4 py-3 text-center">
+              <div className="bg-surface-alt px-4 py-3.5 text-center">
                 <div className="text-white text-sm font-normal">
                   <span className="font-bold">{card.count}</span>
                   <span className="text-white/70"> / {totalEnginesCount} Vendor</span>
                 </div>
-                <p className="text-white text-[10px] leading-snug mt-1.5">{card.desc}</p>
+                <p className="text-white/85 text-[10px] leading-snug mt-2">{card.desc}</p>
               </div>
             </div>
           ))}
@@ -431,16 +431,16 @@ export const ResultCard: React.FC<ResultCardProps> = ({ scan, onScanAnother }) =
       </div>
 
       {/* Item Metadata Box */}
-      <div className="w-full bg-surface-alt/50 rounded-xl p-4 border border-surface-alt mb-6 text-left flex flex-col gap-2 text-xs">
-        <div className="flex justify-between items-center">
-          <span className="text-muted">Item:</span>
+      <div className="w-full bg-surface-alt/50 rounded-xl p-5 border border-surface-alt mb-6 text-left flex flex-col gap-3 text-xs">
+        <div className="flex justify-between items-center gap-4">
+          <span className="text-muted shrink-0">Item:</span>
           <span className="font-mono text-white font-medium truncate max-w-[280px]">
             {scan.item_label}
           </span>
         </div>
 
-        <div className="flex justify-between items-center">
-          <span className="text-muted">Type / Scan Time:</span>
+        <div className="flex justify-between items-center gap-4">
+          <span className="text-muted shrink-0">Type / Scan Time:</span>
           <span className="text-gray-300">
             <span className="uppercase font-semibold text-brand-accent">{scan.type}</span> ·{' '}
             {formatDateTime(

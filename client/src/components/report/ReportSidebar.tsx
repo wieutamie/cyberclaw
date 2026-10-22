@@ -67,10 +67,10 @@ export const ReportSidebar: React.FC<ReportSidebarProps> = ({ scan }) => {
   const warningCount = stats.suspicious;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       {/* Quick "no threat" mini list */}
       {miniRows.length > 0 && (
-        <div className="rounded-2xl bg-bg p-4 flex flex-col gap-2">
+        <div className="rounded-2xl bg-bg p-4 flex flex-col gap-2.5">
           {miniRows.map((row) => (
             <div key={row.name} className="flex items-center justify-between gap-3">
               <span className="text-[13px] font-semibold text-white truncate">
@@ -85,18 +85,18 @@ export const ReportSidebar: React.FC<ReportSidebarProps> = ({ scan }) => {
       )}
 
       {/* Danger / Warning cards */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-4">
         <div className="rounded-2xl overflow-hidden shadow-soft">
           <div className="bg-status-danger h-9 flex items-center justify-center">
             <span className="text-[12px] font-extrabold text-white">
               Danger
             </span>
           </div>
-          <div className="bg-bg px-3 py-2.5 text-center">
+          <div className="bg-bg px-3 py-3 text-center">
             <div className="text-white text-sm font-bold">
               {dangerCount} / {totalEnginesCount} Vendor
             </div>
-            <p className="mt-1 text-[9px] leading-tight text-muted">
+            <p className="mt-1.5 text-[10px] leading-snug text-muted">
               File with malicious files detected. Guarantee strongly updated
             </p>
           </div>
@@ -108,20 +108,20 @@ export const ReportSidebar: React.FC<ReportSidebarProps> = ({ scan }) => {
               Warning
             </span>
           </div>
-          <div className="bg-bg px-3 py-2.5 text-center">
+          <div className="bg-bg px-3 py-3 text-center">
             <div className="text-white text-sm font-bold">
               {warningCount} / {totalEnginesCount} Vendor
             </div>
-            <p className="mt-1 text-[9px] leading-tight text-muted">
+            <p className="mt-1.5 text-[10px] leading-snug text-muted">
               File is very suspicious, but there are some unknown detection
             </p>
           </div>
         </div>
       </div>
       {/* Detection donut */}
-      <div className="flex items-center justify-center py-1">
+      <div className="flex items-center justify-center py-2">
         <div
-          className="relative w-36 h-36 rounded-full flex items-center justify-center"
+          className="relative w-40 h-40 rounded-full flex items-center justify-center"
           style={{
             background: `conic-gradient(#FF4F79 0deg ${detectedAngle}deg, #412431 ${detectedAngle}deg 360deg)`,
           }}
@@ -157,18 +157,18 @@ export const ReportSidebar: React.FC<ReportSidebarProps> = ({ scan }) => {
       </div>
 
       {/* Clean / Undetected footer cards */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-4">
         <div className="rounded-2xl overflow-hidden shadow-soft">
           <div className="bg-status-clean h-9 flex items-center justify-center">
             <span className="text-[12px] font-extrabold text-bg">
               Clean
             </span>
           </div>
-          <div className="bg-bg px-3 py-2.5 text-center">
+          <div className="bg-bg px-3 py-3 text-center">
             <div className="text-white text-sm font-bold">
               {stats.harmless} / {totalEnginesCount} Vendor
             </div>
-            <p className="mt-1 text-[9px] leading-tight text-muted">
+            <p className="mt-1.5 text-[10px] leading-snug text-muted">
               File with no harmful behaviour and contains no known threats
             </p>
           </div>
@@ -180,18 +180,18 @@ export const ReportSidebar: React.FC<ReportSidebarProps> = ({ scan }) => {
               Undetected
             </span>
           </div>
-          <div className="bg-bg px-3 py-2.5 text-center">
+          <div className="bg-bg px-3 py-3 text-center">
             <div className="text-white text-sm font-bold">
               {stats.undetected} / {totalEnginesCount} Vendor
             </div>
-            <p className="mt-1 text-[9px] leading-tight text-muted">
+            <p className="mt-1.5 text-[10px] leading-snug text-muted">
               Undetected by vendors supporting signature-based detection
             </p>
           </div>
         </div>
       </div>
 
-      <span className="text-center text-[10px] text-muted">
+      <span className="text-center text-[10px] text-muted pt-1">
         {t('common.poweredBy')}
       </span>
     </div>

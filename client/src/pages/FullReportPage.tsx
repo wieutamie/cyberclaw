@@ -56,9 +56,9 @@ export const FullReportPage: React.FC = () => {
   const vendors = scan.vendor_results || [];
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       {/* Breadcrumb row */}
-      <div className="animate-fade-rise flex items-center justify-between gap-3">
+      <div className="animate-fade-rise flex items-center justify-between gap-4 flex-wrap">
         <Link
           to={`/scan/${scan.id}`}
           className="group inline-flex items-center gap-2 text-xs font-semibold text-brand-accent hover:underline"
@@ -73,8 +73,8 @@ export const FullReportPage: React.FC = () => {
       </div>
 
       {/* Mega panel: vendor list (left) + summary rail (right) */}
-      <div className="animate-fade-rise [animation-delay:100ms] rounded-card bg-surface border border-surface-alt p-4 sm:p-6 shadow-card grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <div className="lg:col-span-8 rounded-2xl bg-bg p-4 sm:p-5">
+      <div className="animate-fade-rise [animation-delay:100ms] rounded-card bg-surface border border-surface-alt p-5 sm:p-7 shadow-card grid grid-cols-1 lg:grid-cols-12 gap-7 lg:gap-8 items-start">
+        <div className="lg:col-span-8 rounded-2xl bg-bg p-5 sm:p-6">
           <VendorReportList vendors={vendors} />
         </div>
 
@@ -84,7 +84,7 @@ export const FullReportPage: React.FC = () => {
       </div>
 
       {/* Footer credit */}
-      <div className="animate-fade-rise [animation-delay:180ms] flex flex-col items-center gap-1 text-center">
+      <div className="animate-fade-rise [animation-delay:180ms] flex flex-col items-center gap-1.5 text-center pt-1">
         <span className="text-[11px] text-muted">
           ©2023 Cyber Claw. Crafted with precision by Rio Alvris.
         </span>
