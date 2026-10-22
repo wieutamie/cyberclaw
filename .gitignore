@@ -34,3 +34,9 @@ Thumbs.db
 .vercel/
 .vercel
 .env*
+
+# Scratch output from local verification runs
+*-out.txt
+tsc*.txt
+ep.txt
+
