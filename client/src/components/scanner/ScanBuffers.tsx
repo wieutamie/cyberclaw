@@ -48,9 +48,10 @@ export const ScanBuffers: React.FC<ScanBuffersProps> = ({
         const res = await api.getScanStatus(scanId);
 
         if (res.state === 'completed' || res.state === 'not_found' || res.state === 'failed') {
-          // Putar BufferCat 360° sekali, lalu tampilkan hasil.
+          // Putar BufferCat sekali, lalu tampilkan hasil. Dijaga singkat (280ms)
+          // supaya hasil yang sudah siap tidak terasa tertahan.
           setFinishing(true);
-          finishId = setTimeout(onComplete, 600);
+          finishId = setTimeout(onComplete, 280);
           return;
         }
 
@@ -58,12 +59,12 @@ export const ScanBuffers: React.FC<ScanBuffersProps> = ({
           setSubStatus(res.progressLabel);
         }
 
-        // Poll every 1.2s so the UI flips the moment the server has the result.
-        timerId = setTimeout(checkStatus, 1200);
+        // Poll every 700ms so the UI flips the moment the server has the result.
+        timerId = setTimeout(checkStatus, 700);
       } catch (err: any) {
         console.error('Polling error:', err);
         setErrorMsg(err.message || 'Failed to check status');
-        timerId = setTimeout(checkStatus, 2500);
+        timerId = setTimeout(checkStatus, 2000);
       }
     };
 

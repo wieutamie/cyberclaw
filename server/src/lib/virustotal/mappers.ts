@@ -1,9 +1,4 @@
 import { ScanStats, VendorCategory, VendorResult } from '../../types/index.js';
-import {
-  CANONICAL_VENDOR_COUNT,
-  CANONICAL_VENDORS,
-  resolveCanonicalVendor,
-} from './vendors.js';
 
 interface RawStats {
   malicious?: number;
@@ -58,69 +53,56 @@ function normalizeCategory(raw?: string): VendorCategory {
 }
 
 /**
- * Memetakan hasil mentah VT ke daftar KANON 71 vendor.
+ * Memetakan `last_analysis_results` mentah dari VirusTotal menjadi daftar
+ * vendor APA ADANYA (data asli, tanpa padding dan tanpa pembuangan).
  *
- * Jaminan keluaran (untuk file, URL, maupun hash):
- * 1. Selalu TEPAT `CANONICAL_VENDOR_COUNT` (71) entri — tidak lebih, tidak kurang.
- * 2. Engine VT di luar daftar kanon DIABAIKAN.
- * 3. Engine kanon yang tidak dikembalikan VT di-pad sebagai `undetected`
- *    (dinilai CLEAN) dengan `result: null`.
- * 4. Urutan keluaran mengikuti urutan kanon (indeks stabil).
+ * Jaminan:
+ * 1. Setiap engine yang dilaporkan VT muncul — tidak ada yang dibuang.
+ * 2. Tidak ada engine fiktif/padding. Jika VT hanya melaporkan 60 engine,
+ *    hasilnya 60 entri.
+ * 3. `engine_name` memakai nama resmi VT (fallback ke key jika kosong).
+ * 4. Urutan dipertahankan sesuai respons VT.
+ *
+ * Dengan begitu daftar vendor yang ditampilkan ke pengguna selalu identik
+ * dengan yang benar-benar dikembalikan VirusTotal.
  */
 export function mapVendorResults(
   resultsObj?: Record<string, RawEngineResult>
 ): VendorResult[] {
-  // Peta nama kanon -> hasil mentah VT (hanya untuk engine kanon).
-  const byCanonical = new Map<string, RawEngineResult>();
+  if (!resultsObj || typeof resultsObj !== 'object') return [];
 
-  if (resultsObj && typeof resultsObj === 'object') {
-    for (const [key, item] of Object.entries(resultsObj)) {
-      if (!item || typeof item !== 'object') continue;
-      const rawName = item.engine_name || key;
-      const canonical = resolveCanonicalVendor(rawName);
-      if (!canonical) continue; // engine di luar kanon -> diabaikan
-      byCanonical.set(canonical, item);
-    }
-  }
-
-  const list: VendorResult[] = CANONICAL_VENDORS.map((engine_name) => {
-    const raw = byCanonical.get(engine_name);
-    if (!raw) {
-      // Pad: engine kanon yang tidak melapor -> undetected (clean).
-      return {
-        engine_name,
-        category: 'undetected',
-        result: null,
-      };
-    }
-    return {
-      engine_name,
-      category: normalizeCategory(raw.category),
-      result: raw.result ?? null,
-      method: raw.method,
-      engine_version: raw.engine_version,
-      engine_update: raw.engine_update,
-    };
-  });
-
-  // Sanity check: pastikan tepat 71 entri (jaga-jaga bila daftar kanon berubah).
-  if (list.length !== CANONICAL_VENDOR_COUNT) {
-    return list.slice(0, CANONICAL_VENDOR_COUNT);
+  const list: VendorResult[] = [];
+  for (const [key, item] of Object.entries(resultsObj)) {
+    if (!item || typeof item !== 'object') continue;
+    list.push({
+      engine_name: item.engine_name || key,
+      category: normalizeCategory(item.category),
+      result: item.result ?? null,
+      method: item.method,
+      engine_version: item.engine_version,
+      engine_update: item.engine_update,
+    });
   }
   return list;
 }
 
 /**
- * Menyusun stats HANYA dari daftar vendor kanon (71 engine) sehingga angka pada
- * kartu statistik SELALU konsisten dengan daftar vendor yang ditampilkan.
+ * Apakah VirusTotal benar-benar melaporkan hasil engine untuk item ini?
  *
- * PENTING: `last_analysis_stats` mentah dari VT menghitung SELURUH engine
- * (termasuk yang di luar daftar kanon). Menyatukannya (mis. `Math.max`) membuat
- * `stats.malicious` bisa jauh lebih besar daripada jumlah kartu vendor
- * `malicious` yang benar-benar ditampilkan, dan total seluruh kategori bisa
- * melebihi 71 (mis. 66 malicious + 19 undetected + 5 unsupported = 90). Karena
- * itu stats diturunkan murni dari `vendor_results`; jumlah seluruh kategori
- * dijamin tepat sama dengan jumlah vendor kanon (71).
+ * Ini penting karena `calculateVerdict` menganggap "tidak ada malicious dan
+ * tidak ada suspicious" sebagai `clean`. Tanpa pengecekan ini, laporan yang
+ * KOSONG (0 engine) akan salah ditampilkan sebagai "Clean" padahal tidak ada
+ * satu pun engine yang memeriksa file/URL tersebut. Data kosong harus
+ * diperlakukan sebagai "belum ada hasil", bukan "bersih".
+ */
+export function hasVendorData(vendors: VendorResult[]): boolean {
+  return Array.isArray(vendors) && vendors.length > 0;
+}
+
+/**
+ * Menyusun stats dari daftar vendor yang benar-benar dilaporkan VT, sehingga
+ * angka pada kartu statistik SELALU konsisten dengan daftar vendor yang
+ * ditampilkan (jumlah seluruh kategori = jumlah vendor di daftar).
  */
 export function aggregateStats(vendors: VendorResult[]): ScanStats {
   return vendors.reduce(

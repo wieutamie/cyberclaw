@@ -27,6 +27,13 @@ const envSchema = z.object({
   CRON_SECRET: z.string().optional().default(''),
   VT_BASE_URL: z.string().default('https://www.virustotal.com/api/v3'),
   VT_RATE_LIMIT_PER_MIN: z.string().default('4').transform((val) => parseInt(val, 10)),
+  // Jeda antar-polling status analisis (ms). Kosong = diturunkan otomatis dari
+  // VT_RATE_LIMIT_PER_MIN (60_000 / kuota per menit), minimal 3 detik.
+  VT_POLL_INTERVAL_MS: z
+    .string()
+    .optional()
+    .default('')
+    .transform((val) => (val ? parseInt(val, 10) || 0 : 0)),
   MAX_UPLOAD_MB: z.string().default('32').transform((val) => parseInt(val, 10)),
   LOG_LEVEL: z.string().default('info'),
 });

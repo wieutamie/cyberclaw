@@ -47,7 +47,6 @@ export const GeneralPreferences: React.FC = () => {
 
   // History & Retention
   const [retentionDays, setRetentionDays] = useState<number | null>(settings.history_retention_days);
-  const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [showClearModal, setShowClearModal] = useState(false);
   const [clearing, setClearing] = useState(false);
 
@@ -174,12 +173,11 @@ export const GeneralPreferences: React.FC = () => {
   };
 
   const handleClearHistory = async () => {
-    if (deleteConfirmText !== 'DELETE') return;
+    if (clearing) return;
     setClearing(true);
     try {
       await api.clearAllHistory();
       setShowClearModal(false);
-      setDeleteConfirmText('');
       showSuccessToast(t('preferences.historyCleared'));
     } catch (err: any) {
       showErrorToast(err?.message || t('preferences.clearFailed'));
@@ -302,12 +300,7 @@ export const GeneralPreferences: React.FC = () => {
 
       <ClearHistoryModal
         isOpen={showClearModal}
-        onClose={() => {
-          setShowClearModal(false);
-          setDeleteConfirmText('');
-        }}
-        confirmText={deleteConfirmText}
-        setConfirmText={setDeleteConfirmText}
+        onClose={() => setShowClearModal(false)}
         onConfirm={handleClearHistory}
         clearing={clearing}
         t={t}
@@ -763,8 +756,6 @@ const VtApiKeySection: React.FC<VtApiKeySectionProps> = ({
 interface ClearHistoryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  confirmText: string;
-  setConfirmText: (v: string) => void;
   onConfirm: () => void;
   clearing: boolean;
   t: (key: string) => string;
@@ -773,8 +764,6 @@ interface ClearHistoryModalProps {
 const ClearHistoryModal: React.FC<ClearHistoryModalProps> = ({
   isOpen,
   onClose,
-  confirmText,
-  setConfirmText,
   onConfirm,
   clearing,
   t,
@@ -794,16 +783,6 @@ const ClearHistoryModal: React.FC<ClearHistoryModalProps> = ({
 
     <p className="text-sm text-gray-300">{t('preferences.clearHistoryWarning')}</p>
 
-    <p className="text-xs text-muted font-medium">{t('preferences.clearHistoryConfirm')}:</p>
-
-    <input
-      type="text"
-      value={confirmText}
-      onChange={(e) => setConfirmText(e.target.value)}
-      placeholder="DELETE"
-      className="px-3.5 py-2.5 rounded-btn bg-surface-alt border border-status-danger font-mono text-center text-sm font-bold text-white focus:outline-none"
-    />
-
     <div className="flex justify-end gap-3 mt-2">
       <button
         onClick={onClose}
@@ -812,7 +791,7 @@ const ClearHistoryModal: React.FC<ClearHistoryModalProps> = ({
         {t('common.cancel')}
       </button>
       <button
-        disabled={confirmText !== 'DELETE' || clearing}
+        disabled={clearing}
         onClick={onConfirm}
         className="px-4 py-2 rounded-btn bg-status-danger text-white text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-status-danger/80"
       >

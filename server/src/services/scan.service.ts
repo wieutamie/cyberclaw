@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { supabase, memoryStore } from '../lib/supabase.js';
 import { vtClient, VirusTotalError } from '../lib/virustotal/client.js';
-import { mapVendorResults, aggregateStats } from '../lib/virustotal/mappers.js';
+import { mapVendorResults, aggregateStats, hasVendorData } from '../lib/virustotal/mappers.js';
 import { calculateVerdict } from '../lib/virustotal/verdict.js';
 import { vtHashCache } from '../lib/virustotal/hashCache.js';
 import { ApiKeyService } from './apiKey.service.js';
@@ -9,6 +9,7 @@ import { SettingsService } from './settings.service.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { ScanRecord } from '../types/index.js';
 import { logger } from '../lib/logger.js';
+import { env } from '../config/env.js';
 
 export class ScanService {
   /**
@@ -42,6 +43,15 @@ export class ScanService {
     itemMetaBase: Record<string, unknown> = {}
   ): Promise<Partial<ScanRecord>> {
     const vendor_results = mapVendorResults(attrs?.last_analysis_results);
+    // Laporan tanpa satu pun engine BUKAN "clean" — itu berarti VT belum punya
+    // hasil. Lempar NOT_FOUND agar pemanggil memakai jalur upload/polling.
+    if (!hasVendorData(vendor_results)) {
+      throw new VirusTotalError(
+        'NOT_FOUND',
+        'VirusTotal has no engine results for this item yet.',
+        404
+      );
+    }
     const stats = aggregateStats(vendor_results);
     const settings = await SettingsService.getSettings(userId);
     const verdict = calculateVerdict(stats, settings.danger_threshold);
@@ -200,29 +210,33 @@ export class ScanService {
       const isFresh = analyzedAt > 0 && Date.now() - analyzedAt < 7 * 24 * 60 * 60 * 1000;
       if (attrs?.last_analysis_results && isFresh) {
         const vendor_results = mapVendorResults(attrs.last_analysis_results);
-        const stats = aggregateStats(vendor_results);
-        const settings = await SettingsService.getSettings(userId);
-        const verdict = calculateVerdict(stats, settings.danger_threshold);
+        // Laporan "fresh" tapi tanpa engine bukan hasil yang bisa dipercaya;
+        // jatuh ke jalur submit agar VT menganalisis ulang.
+        if (hasVendorData(vendor_results)) {
+          const stats = aggregateStats(vendor_results);
+          const settings = await SettingsService.getSettings(userId);
+          const verdict = calculateVerdict(stats, settings.danger_threshold);
 
-        const completed = {
-          state: 'completed' as const,
-          verdict,
-          stats,
-          vendor_results,
-          item_meta: {
-            url,
-            final_url: attrs.url,
-            title: attrs.title,
-            http_response_code: attrs.last_http_response_code,
-            categories: attrs.categories,
-            last_analysis_date: attrs.last_analysis_date,
-          },
-          raw_payload: existing.data,
-          completed_at: new Date().toISOString(),
-        };
+          const completed = {
+            state: 'completed' as const,
+            verdict,
+            stats,
+            vendor_results,
+            item_meta: {
+              url,
+              final_url: attrs.url,
+              title: attrs.title,
+              http_response_code: attrs.last_http_response_code,
+              categories: attrs.categories,
+              last_analysis_date: attrs.last_analysis_date,
+            },
+            raw_payload: existing.data,
+            completed_at: new Date().toISOString(),
+          };
 
-        await this.updateScan(scanId, completed);
-        return { ...initialRecord, ...completed };
+          await this.updateScan(scanId, completed);
+          return { ...initialRecord, ...completed };
+        }
       }
     } catch (err) {
       if (!(err instanceof VirusTotalError && err.code === 'NOT_FOUND')) {
@@ -279,8 +293,16 @@ export class ScanService {
     try {
       const res = await vtClient.getFileReport(apiKey, cleanHash);
       const attrs = res?.data?.attributes || {};
-      // Daftar kanon 71 vendor (pad undetected bila VT tidak melaporkan).
+      // Vendor hasil langsung dari VirusTotal (data asli, tanpa padding).
       const vendor_results = mapVendorResults(attrs.last_analysis_results);
+      // VT kadang mengembalikan objek file tanpa hasil engine sama sekali
+      // (baru diunggah, analisis belum jalan). Itu BUKAN "clean" — laporkan
+      // sebagai not_found agar UI jujur menampilkan belum ada hasil.
+      if (!hasVendorData(vendor_results)) {
+        await this.updateScan(scanId, { state: 'not_found' });
+        initialRecord.state = 'not_found';
+        return initialRecord;
+      }
       const stats = aggregateStats(vendor_results);
       const settings = await SettingsService.getSettings(userId);
       const verdict = calculateVerdict(stats, settings.danger_threshold);
@@ -344,20 +366,86 @@ export class ScanService {
     // Polling VT if vt_analysis_id exists
     const now = Date.now();
     const lastPolled = scan.last_polled_at ? new Date(scan.last_polled_at).getTime() : 0;
-    // Throttled to respect the VirusTotal quota (default 4 req/min), so we poll
-    // at most once every 15s — 4/min, exactly at the configured budget.
-    const canPollVT = now - lastPolled >= 15000;
+    // Jeda polling diturunkan dari kuota VirusTotal, bukan angka mati 15s.
+    // Dengan kuota gratis 4 req/menit → 15s (tetap aman). Kalau key berbayar
+    // (mis. 500 req/menit) → 3s, sehingga hasil muncul jauh lebih cepat tanpa
+    // melanggar kuota. `VT_POLL_INTERVAL_MS` bisa menimpanya secara eksplisit.
+    const pollIntervalMs = Math.max(
+      3000,
+      env.VT_POLL_INTERVAL_MS || Math.ceil(60000 / Math.max(1, env.VT_RATE_LIMIT_PER_MIN))
+    );
+    const canPollVT = now - lastPolled >= pollIntervalMs;
 
     if (scan.vt_analysis_id && canPollVT) {
       try {
         const apiKey = await this.getEffectiveKey(userId);
+
+        // ---- File: satu panggilan, data penuh -------------------------------
+        // Sebelumnya setiap penyelesaian butuh DUA panggilan: `/analyses/{id}`
+        // lalu `/files/{hash}` untuk laporan lengkap. Itu memakan 2 jatah kuota
+        // sekaligus dan memperlambat hasil. Untuk file kita sudah tahu hash-nya,
+        // jadi langsung ambil laporan file: satu panggilan, dan datanya sudah
+        // lengkap (semua engine yang dilaporkan VT).
+        if (scan.type === 'file' && scan.item_sha256) {
+          const fileRes = await vtClient.getFileReport(apiKey, scan.item_sha256);
+          const fileAttrs = fileRes?.data?.attributes || {};
+          await this.updateScan(scanId, { last_polled_at: new Date().toISOString() });
+
+          const vendors = mapVendorResults(fileAttrs.last_analysis_results);
+          // Hasil dianggap siap hanya jika (a) VT sudah melaporkan engine, dan
+          // (b) analisisnya baru — bukan laporan lama dari sebelum scan ini.
+          // Tanpa (b), tombol "Rescan" akan langsung menampilkan hasil usang.
+          const analyzedAtMs = (fileAttrs.last_analysis_date || 0) * 1000;
+          const scanStartedMs = new Date(scan.created_at).getTime();
+          const isFreshEnough = analyzedAtMs >= scanStartedMs - 120_000;
+
+          if (hasVendorData(vendors) && isFreshEnough) {
+            const stats = aggregateStats(vendors);
+            const settings = await SettingsService.getSettings(userId);
+            const verdict = calculateVerdict(stats, settings.danger_threshold);
+
+            await this.updateScan(scanId, {
+              state: 'completed',
+              verdict,
+              stats,
+              vendor_results: vendors,
+              item_sha256: fileAttrs.sha256 ?? scan.item_sha256,
+              item_meta: {
+                ...(scan.item_meta || {}),
+                size: fileAttrs.size ?? scan.item_meta?.size,
+                type_description:
+                  fileAttrs.type_description ?? scan.item_meta?.type_description,
+                names: fileAttrs.names ?? scan.item_meta?.names,
+                md5: fileAttrs.md5 ?? scan.item_meta?.md5,
+                sha1: fileAttrs.sha1 ?? scan.item_meta?.sha1,
+                sha256: fileAttrs.sha256 ?? scan.item_sha256,
+                first_submission_date:
+                  fileAttrs.first_submission_date ?? scan.item_meta?.first_submission_date,
+                last_analysis_date:
+                  fileAttrs.last_analysis_date ?? scan.item_meta?.last_analysis_date,
+              },
+              raw_payload: fileRes.data,
+              completed_at: new Date().toISOString(),
+            });
+
+            return {
+              state: 'completed',
+              progressLabel: 'Analysis Complete',
+              verdict,
+            };
+          }
+
+          await this.updateScan(scanId, { state: 'in_progress' });
+          return { state: 'in_progress', progressLabel: 'Analyzing...' };
+        }
+
         const res = await vtClient.getAnalysis(apiKey, scan.vt_analysis_id);
         const attrs = res?.data?.attributes;
 
         await this.updateScan(scanId, { last_polled_at: new Date().toISOString() });
 
         if (attrs?.status === 'completed') {
-          // Ambil hasil kanon 71 vendor + stats.
+          // Ambil hasil vendor asli dari VirusTotal + stats.
           let vendor_results = mapVendorResults(attrs.results);
           let stats = aggregateStats(vendor_results);
 
@@ -366,7 +454,8 @@ export class ScanService {
           let rawData = res.data;
 
           // Untuk URL: endpoint /analyses sering hanya mengembalikan sebagian
-          // engine. Ambil laporan URL penuh agar SELURUH 71 vendor berperan.
+          // engine. Ambil laporan URL penuh agar seluruh engine yang dilaporkan
+          // VirusTotal ikut terhitung.
           if (scan.type === 'url' && scan.item_label) {
             try {
               const urlId = Buffer.from(scan.item_label).toString('base64url');
@@ -396,11 +485,12 @@ export class ScanService {
             itemMeta = { ...itemMeta, ...res.meta.file_info };
           }
 
-          // Jaminan: vendor_results TIDAK PERNAH kosong. Jika VT tidak
-          // mengembalikan apa pun, seluruh 71 engine dianggap undetected (clean).
-          if (vendor_results.length === 0) {
-            vendor_results = mapVendorResults(undefined);
-            stats = aggregateStats(vendor_results);
+          // Tidak ada satu pun engine yang dilaporkan = VT belum punya hasil.
+          // Jangan pernah menyebutnya "clean"; biarkan status tetap berjalan
+          // supaya polling berikutnya mengambil hasil yang sebenarnya.
+          if (!hasVendorData(vendor_results)) {
+            await this.updateScan(scanId, { state: 'in_progress' });
+            return { state: 'in_progress', progressLabel: 'Analyzing...' };
           }
 
           const settings = await SettingsService.getSettings(userId);

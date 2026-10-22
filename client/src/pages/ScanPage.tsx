@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ShieldAlert } from 'lucide-react';
@@ -34,7 +34,7 @@ export const ScanPage: React.FC = () => {
   const isFinal = (state?: ScanState) =>
     state === 'completed' || state === 'not_found' || state === 'failed';
 
-  const fetchScan = async () => {
+  const fetchScan = useCallback(async () => {
     if (!scanId) return;
     try {
       const data = await api.getScanDetails(scanId);
@@ -54,14 +54,13 @@ export const ScanPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [scanId, settings.auto_open_report, navigate]);
 
   useEffect(() => {
     // New scan id → allow the auto-open behaviour again for this scan.
     autoOpenedReport.current = false;
     fetchScan();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scanId]);
+  }, [fetchScan]);
 
   // Fire the "gemash" reveal once, the first time the finished result is ready.
   useEffect(() => {

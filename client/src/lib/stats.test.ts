@@ -3,7 +3,7 @@ import { totalEngines } from './stats.js';
 
 describe('totalEngines', () => {
   it('sums ALL seven categories, not just the big four', () => {
-    // Real EICAR scenario: 47 malicious + 19 undetected + 5 type-unsupported = 71.
+    // Real-world shape: VT reported 71 engines for this file.
     const total = totalEngines({
       malicious: 47,
       suspicious: 0,
@@ -27,6 +27,21 @@ describe('totalEngines', () => {
       unsupported: 1,
     });
     expect(total).toBe(71);
+  });
+
+  it('equals the number of vendors actually reported', () => {
+    // A scan where VT only reported 60 engines must total 60, not a padded 71.
+    expect(
+      totalEngines({
+        malicious: 2,
+        suspicious: 0,
+        harmless: 5,
+        undetected: 50,
+        timeout: 2,
+        failure: 1,
+        unsupported: 0,
+      })
+    ).toBe(60);
   });
 
   it('returns 0 for missing stats', () => {

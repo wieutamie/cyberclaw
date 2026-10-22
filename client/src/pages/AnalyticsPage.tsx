@@ -209,9 +209,19 @@ export const AnalyticsPage: React.FC = () => {
                           {act.verdict === 'clean' && (
                             <span className="text-status-clean">Clean</span>
                           )}
-                          {(!act.verdict || act.state === 'not_found') && (
+                          {!act.verdict && act.state === 'not_found' && (
                             <span className="text-muted">Not Found</span>
                           )}
+                          {!act.verdict && act.state === 'failed' && (
+                            <span className="text-status-danger">Failed</span>
+                          )}
+                          {!act.verdict &&
+                            act.state !== 'not_found' &&
+                            act.state !== 'failed' && (
+                              <span className="text-muted capitalize">
+                                {act.state.replace('_', ' ')}
+                              </span>
+                            )}
                         </td>
                       </tr>
                     ))}

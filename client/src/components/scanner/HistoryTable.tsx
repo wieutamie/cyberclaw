@@ -40,7 +40,6 @@ export const HistoryTable: React.FC = () => {
 
   // Clear-all flow
   const [showClearModal, setShowClearModal] = useState(false);
-  const [clearConfirmText, setClearConfirmText] = useState('');
   const [clearing, setClearing] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
@@ -100,12 +99,11 @@ export const HistoryTable: React.FC = () => {
   };
 
   const handleClearAll = async () => {
-    if (clearConfirmText !== 'DELETE' || clearing) return;
+    if (clearing) return;
     setClearing(true);
     try {
       await api.clearAllHistory();
       setShowClearModal(false);
-      setClearConfirmText('');
       setPage(1);
       setItems([]);
       setTotal(0);
@@ -223,10 +221,7 @@ export const HistoryTable: React.FC = () => {
           {hasHistory && (
             <button
               type="button"
-              onClick={() => {
-                setClearConfirmText('');
-                setShowClearModal(true);
-              }}
+              onClick={() => setShowClearModal(true)}
               title={t('history.clearAll')}
               className="flex items-center gap-2 px-3.5 py-2 rounded-btn bg-status-danger/15 border border-status-danger/50 text-status-danger text-xs font-bold whitespace-nowrap hover:bg-status-danger hover:text-white active:scale-[0.98] transition-all"
             >
@@ -407,10 +402,7 @@ export const HistoryTable: React.FC = () => {
       {/* Clear-all confirmation */}
       <Modal
         isOpen={showClearModal}
-        onClose={() => {
-          setShowClearModal(false);
-          setClearConfirmText('');
-        }}
+        onClose={() => setShowClearModal(false)}
         labelledBy="history-clear-title"
         panelClassName="max-w-md border-status-danger"
       >
@@ -423,28 +415,15 @@ export const HistoryTable: React.FC = () => {
 
         <p className="text-sm text-gray-300">{t('preferences.clearHistoryWarning')}</p>
 
-        <p className="text-xs text-muted font-medium">{t('preferences.clearHistoryConfirm')}:</p>
-
-        <input
-          type="text"
-          value={clearConfirmText}
-          onChange={(e) => setClearConfirmText(e.target.value)}
-          placeholder="DELETE"
-          className="px-3.5 py-2.5 rounded-btn bg-surface-alt border border-status-danger font-mono text-center text-sm font-bold text-white focus:outline-none"
-        />
-
         <div className="flex justify-end gap-3 mt-2">
           <button
-            onClick={() => {
-              setShowClearModal(false);
-              setClearConfirmText('');
-            }}
+            onClick={() => setShowClearModal(false)}
             className="px-4 py-2 rounded-btn bg-surface-alt text-white text-xs font-medium"
           >
             {t('common.cancel')}
           </button>
           <button
-            disabled={clearConfirmText !== 'DELETE' || clearing}
+            disabled={clearing}
             onClick={handleClearAll}
             className="px-4 py-2 rounded-btn bg-status-danger text-white text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-status-danger/80"
           >

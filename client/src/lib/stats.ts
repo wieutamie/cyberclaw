@@ -3,12 +3,9 @@ import { ScanStats } from '../types/index.js';
 /**
  * Total number of engines a scan was evaluated against.
  *
- * IMPORTANT: this must include ALL seven canonical categories — not just the
- * four "big" ones. VirusTotal can report engines as `type-unsupported`,
- * `timeout`, or `failure`; those engines still appear as vendor cards, so
- * omitting them makes the UI show e.g. "/66 Vendor" while 71 cards render.
- * The server guarantees the seven categories sum to exactly 71 (the canonical
- * vendor count), so this helper yields the true engine total.
+ * Sums every category that VirusTotal actually reported for this scan. The
+ * server builds `stats` directly from the vendor list returned by VT, so this
+ * total always equals the number of vendor cards rendered.
  */
 export function totalEngines(stats?: Partial<ScanStats> | null): number {
   if (!stats) return 0;
