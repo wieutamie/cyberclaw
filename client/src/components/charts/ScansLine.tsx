@@ -33,7 +33,7 @@ function parseDayKey(key: string): Date {
 }
 
 export const ScansLine: React.FC<ScansLineProps> = ({ data }) => {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const locale = (i18n.language || "en").split("-")[0];
 
   // Day keys follow the active locale layout (en -> MM/DD, id -> DD/MM) so the
@@ -51,7 +51,7 @@ export const ScansLine: React.FC<ScansLineProps> = ({ data }) => {
   if (!data || data.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-muted text-sm">
-        No data available for this period
+        {t('common.noDataPeriod')}
       </div>
     );
   }

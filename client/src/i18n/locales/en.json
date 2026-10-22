@@ -23,6 +23,9 @@
     "back": "Back",
     "viewReport": "View Full Report",
     "scanAnother": "Scan Another",
+    "backToDashboard": "Back to Dashboard",
+    "noDataPeriod": "No data available for this period",
+    "securityVendors": "{{count}} Security Vendors",
     "error": "An error occurred"
   },
   "about": {
@@ -167,6 +170,9 @@
     "verdictNotFound": "Not Found",
     "verdictNotFoundDesc": "Hash was not found in VirusTotal database.",
     "verdictOther": "Other",
+    "timeout": "Timeout",
+    "failure": "Failure",
+    "unsupported": "Unsupported",
     "breakdownTitle": "Detection Breakdown",
     "detectionRatio": "Detection Ratio",
     "detectedLabel": "Detected",
@@ -201,7 +207,16 @@
     "lastAnalysis": "Last Analysis Date",
     "viewOnVt": "View on VirusTotal",
     "exportJson": "Export JSON",
-    "copyLink": "Copy Link"
+    "copyLink": "Copy Link",
+    "sidebarNoThreat": "No Threat",
+    "sidebarDetected": "Detected",
+    "sidebarVendorUnit": "Vendor",
+    "sidebarDangerDesc": "File with malicious files detected. Guarantee strongly updated",
+    "sidebarWarningDesc": "File is very suspicious, but there are some unknown detection",
+    "sidebarCleanDesc": "File with no harmful behaviour and contains no known threats",
+    "sidebarUndetectedDesc": "Undetected by vendors supporting signature-based detection",
+    "sidebarScanAnother": "Scan Another File",
+    "sidebarBack": "Back"
   },
   "analytics": {
     "title": "Analytics & Statistics",

@@ -23,6 +23,9 @@
     "back": "Kembali",
     "viewReport": "Lihat Laporan Lengkap",
     "scanAnother": "Scan Lainnya",
+    "backToDashboard": "Kembali ke Dashboard",
+    "noDataPeriod": "Belum ada data untuk periode ini",
+    "securityVendors": "{{count}} Vendor Keamanan",
     "error": "Terjadi kesalahan"
   },
   "about": {
@@ -167,6 +170,9 @@
     "verdictNotFound": "Not Found",
     "verdictNotFoundDesc": "Hash tidak ditemukan di database VirusTotal.",
     "verdictOther": "Lainnya",
+    "timeout": "Timeout",
+    "failure": "Gagal",
+    "unsupported": "Tidak Didukung",
     "breakdownTitle": "Rincian Deteksi",
     "detectionRatio": "Rasio Deteksi",
     "detectedLabel": "Terdeteksi",
@@ -201,7 +207,16 @@
     "lastAnalysis": "Waktu Analisis Terakhir",
     "viewOnVt": "Lihat di VirusTotal",
     "exportJson": "Export JSON",
-    "copyLink": "Salin Tautan"
+    "copyLink": "Salin Tautan",
+    "sidebarNoThreat": "Aman",
+    "sidebarDetected": "Terdeteksi",
+    "sidebarVendorUnit": "Vendor",
+    "sidebarDangerDesc": "File terdeteksi berbahaya. Segera karantina dan jangan dijalankan",
+    "sidebarWarningDesc": "File sangat mencurigakan, ada beberapa deteksi yang belum jelas",
+    "sidebarCleanDesc": "File tidak menunjukkan perilaku berbahaya dan bebas ancaman dikenal",
+    "sidebarUndetectedDesc": "Tidak terdeteksi oleh vendor yang memakai deteksi berbasis signature",
+    "sidebarScanAnother": "Scan File Lain",
+    "sidebarBack": "Kembali"
   },
   "analytics": {
     "title": "Statistik & Analitik",

@@ -52,11 +52,11 @@ export const ReportSidebar: React.FC<ReportSidebarProps> = ({ scan }) => {
       const isUndetected = v.category === 'undetected';
       return {
         name: v.engine_name,
-        status: isUndetected ? 'Undetected' : 'No Threat',
+        status: isUndetected ? t('report.undetected') : t('report.sidebarNoThreat'),
         statusClass: isUndetected ? 'text-muted' : 'text-status-clean',
       };
     });
-  }, [vendors]);
+  }, [vendors, t]);
 
   // Donut geometry — a simple conic-gradient ring, no chart library needed.
   // Use the raw (unrounded) rate for the angle so the arc stays accurate even
@@ -89,15 +89,15 @@ export const ReportSidebar: React.FC<ReportSidebarProps> = ({ scan }) => {
         <div className="rounded-2xl overflow-hidden shadow-soft">
           <div className="bg-status-danger h-9 flex items-center justify-center">
             <span className="text-[12px] font-extrabold text-white">
-              Danger
+              {t('scan.verdictDanger')}
             </span>
           </div>
           <div className="bg-bg px-3 py-3 text-center">
             <div className="text-white text-sm font-bold">
-              {dangerCount} / {totalEnginesCount} Vendor
+              {dangerCount} / {totalEnginesCount} {t('report.sidebarVendorUnit')}
             </div>
             <p className="mt-1.5 text-[10px] leading-snug text-muted">
-              File with malicious files detected. Guarantee strongly updated
+              {t('report.sidebarDangerDesc')}
             </p>
           </div>
         </div>
@@ -105,15 +105,15 @@ export const ReportSidebar: React.FC<ReportSidebarProps> = ({ scan }) => {
         <div className="rounded-2xl overflow-hidden shadow-soft">
           <div className="bg-status-warning h-9 flex items-center justify-center">
             <span className="text-[12px] font-extrabold text-white">
-              Warning
+              {t('scan.verdictWarning')}
             </span>
           </div>
           <div className="bg-bg px-3 py-3 text-center">
             <div className="text-white text-sm font-bold">
-              {warningCount} / {totalEnginesCount} Vendor
+              {warningCount} / {totalEnginesCount} {t('report.sidebarVendorUnit')}
             </div>
             <p className="mt-1.5 text-[10px] leading-snug text-muted">
-              File is very suspicious, but there are some unknown detection
+              {t('report.sidebarWarningDesc')}
             </p>
           </div>
         </div>
@@ -131,7 +131,7 @@ export const ReportSidebar: React.FC<ReportSidebarProps> = ({ scan }) => {
               {detectedPercent}%
             </span>
             <span className="text-[11px] font-semibold text-muted mt-0.5">
-              Detected
+              {t('report.sidebarDetected')}
             </span>
             <span className="text-[10px] text-muted">
               {t('scan.respondingEnginesLabel', { total: respondedCount })}
@@ -146,13 +146,13 @@ export const ReportSidebar: React.FC<ReportSidebarProps> = ({ scan }) => {
           onClick={() => navigate('/dashboard?tab=file&pick=1')}
           className="cta-sheen flex-1 py-3 rounded-btn bg-brand hover:bg-brand-accent text-white text-sm font-bold transition-all shadow-soft"
         >
-          Scan Another File
+          {t('report.sidebarScanAnother')}
         </button>
         <button
           onClick={() => navigate(`/scan/${scan.id}`)}
           className="py-3 px-5 rounded-btn bg-surface-alt hover:bg-surface text-white text-sm font-bold transition-all"
         >
-          Back
+          {t('report.sidebarBack')}
         </button>
       </div>
 
@@ -161,15 +161,15 @@ export const ReportSidebar: React.FC<ReportSidebarProps> = ({ scan }) => {
         <div className="rounded-2xl overflow-hidden shadow-soft">
           <div className="bg-status-clean h-9 flex items-center justify-center">
             <span className="text-[12px] font-extrabold text-bg">
-              Clean
+              {t('scan.verdictClean')}
             </span>
           </div>
           <div className="bg-bg px-3 py-3 text-center">
             <div className="text-white text-sm font-bold">
-              {stats.harmless} / {totalEnginesCount} Vendor
+              {stats.harmless} / {totalEnginesCount} {t('report.sidebarVendorUnit')}
             </div>
             <p className="mt-1.5 text-[10px] leading-snug text-muted">
-              File with no harmful behaviour and contains no known threats
+              {t('report.sidebarCleanDesc')}
             </p>
           </div>
         </div>
@@ -177,15 +177,15 @@ export const ReportSidebar: React.FC<ReportSidebarProps> = ({ scan }) => {
         <div className="rounded-2xl overflow-hidden shadow-soft">
           <div className="bg-status-neutral h-9 flex items-center justify-center">
             <span className="text-[12px] font-extrabold text-white">
-              Undetected
+              {t('report.undetected')}
             </span>
           </div>
           <div className="bg-bg px-3 py-3 text-center">
             <div className="text-white text-sm font-bold">
-              {stats.undetected} / {totalEnginesCount} Vendor
+              {stats.undetected} / {totalEnginesCount} {t('report.sidebarVendorUnit')}
             </div>
             <p className="mt-1.5 text-[10px] leading-snug text-muted">
-              Undetected by vendors supporting signature-based detection
+              {t('report.sidebarUndetectedDesc')}
             </p>
           </div>
         </div>

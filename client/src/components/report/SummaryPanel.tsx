@@ -102,13 +102,13 @@ export const SummaryPanel: React.FC<SummaryPanelProps> = ({ scan, onRescanSucces
     : ShieldCheck;
 
   const statItems = [
-    { label: 'Malicious', val: stats.malicious, color: 'bg-status-danger' },
-    { label: 'Suspicious', val: stats.suspicious, color: 'bg-status-warning' },
-    { label: 'Harmless', val: stats.harmless, color: 'bg-status-clean' },
-    { label: 'Undetected', val: stats.undetected, color: 'bg-muted' },
-    { label: 'Timeout', val: stats.timeout, color: 'bg-muted/60' },
-    { label: 'Failure', val: stats.failure, color: 'bg-muted/60' },
-    { label: 'Unsupported', val: stats.unsupported, color: 'bg-muted/60' },
+    { label: t('report.malicious'), val: stats.malicious, color: 'bg-status-danger' },
+    { label: t('report.suspicious'), val: stats.suspicious, color: 'bg-status-warning' },
+    { label: t('report.harmless'), val: stats.harmless, color: 'bg-status-clean' },
+    { label: t('report.undetected'), val: stats.undetected, color: 'bg-muted' },
+    { label: t('scan.timeout'), val: stats.timeout, color: 'bg-muted/60' },
+    { label: t('scan.failure'), val: stats.failure, color: 'bg-muted/60' },
+    { label: t('scan.unsupported'), val: stats.unsupported, color: 'bg-muted/60' },
   ];
 
   return (
@@ -124,7 +124,7 @@ export const SummaryPanel: React.FC<SummaryPanelProps> = ({ scan, onRescanSucces
               {scan.verdict || 'Scan Result'}
             </h3>
             <span className="text-xs text-muted">
-              {totalEnginesCount} Security Vendors
+              {t('common.securityVendors', { count: totalEnginesCount })}
             </span>
           </div>
         </div>

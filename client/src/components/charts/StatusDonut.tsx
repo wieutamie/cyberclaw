@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface DonutItem {
@@ -12,12 +13,13 @@ interface StatusDonutProps {
 }
 
 export const StatusDonut: React.FC<StatusDonutProps> = ({ data }) => {
+  const { t } = useTranslation();
   const total = data.reduce((acc, curr) => acc + curr.value, 0);
 
   if (total === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-muted text-sm">
-        No data available for this period
+        {t('common.noDataPeriod')}
       </div>
     );
   }

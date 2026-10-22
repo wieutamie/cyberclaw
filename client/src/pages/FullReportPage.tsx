@@ -47,7 +47,7 @@ export const FullReportPage: React.FC = () => {
           onClick={() => navigate('/dashboard')}
           className="px-5 py-2 rounded-btn bg-brand text-white font-bold text-xs hover:bg-brand-accent transition-colors"
         >
-          Back to Dashboard
+          {t('common.backToDashboard')}
         </button>
       </div>
     );
