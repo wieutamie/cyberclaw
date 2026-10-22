@@ -378,6 +378,11 @@ export class ScanService {
 
     if (scan.vt_analysis_id && canPollVT) {
       try {
+        // Catat waktu polling SEBELUM memanggil VirusTotal. Kalau panggilan
+        // gagal (jaringan/404 sesaat setelah upload), throttle tetap berlaku
+        // sehingga polling klien yang cepat tidak menembak VT berulang-ulang
+        // dan menghabiskan kuota.
+        await this.updateScan(scanId, { last_polled_at: new Date().toISOString() });
         const apiKey = await this.getEffectiveKey(userId);
 
         // ---- File: satu panggilan, data penuh -------------------------------
@@ -389,7 +394,6 @@ export class ScanService {
         if (scan.type === 'file' && scan.item_sha256) {
           const fileRes = await vtClient.getFileReport(apiKey, scan.item_sha256);
           const fileAttrs = fileRes?.data?.attributes || {};
-          await this.updateScan(scanId, { last_polled_at: new Date().toISOString() });
 
           const vendors = mapVendorResults(fileAttrs.last_analysis_results);
           // Hasil dianggap siap hanya jika (a) VT sudah melaporkan engine, dan
@@ -441,8 +445,6 @@ export class ScanService {
 
         const res = await vtClient.getAnalysis(apiKey, scan.vt_analysis_id);
         const attrs = res?.data?.attributes;
-
-        await this.updateScan(scanId, { last_polled_at: new Date().toISOString() });
 
         if (attrs?.status === 'completed') {
           // Ambil hasil vendor asli dari VirusTotal + stats.
