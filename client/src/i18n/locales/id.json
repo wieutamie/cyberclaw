@@ -213,10 +213,10 @@
     "donutTitle": "Distribusi Status Scan",
     "lineTitle": "Tren Pemindaian Harian",
     "recentActivity": "Aktivitas Terkini",
-    "viewAllHistory": "Lihat Semua di Riwayat",
     "noData": "Belum ada data untuk periode ini."
   },
   "history": {
+    "title": "Riwayat Scan",
     "timestamp": "Waktu",
     "item": "Item",
     "type": "Tipe",
@@ -230,6 +230,8 @@
     "deleteFailed": "Gagal menghapus scan ini. Coba lagi.",
     "allTypes": "Semua tipe",
     "allStatus": "Semua status",
+    "totalScans": "{{total}} scan",
+    "viewAnalytics": "Lihat Semua Analitik",
     "pageInfo": "Halaman {{page}} dari {{totalPages}} ({{total}} scan)"
   },
   "preferences": {

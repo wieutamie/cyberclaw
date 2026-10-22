@@ -213,10 +213,10 @@
     "donutTitle": "Scan Verdict Distribution",
     "lineTitle": "Daily Scan Activity",
     "recentActivity": "Recent Activity Log",
-    "viewAllHistory": "View All in History",
     "noData": "No scan data available for this timeframe."
   },
   "history": {
+    "title": "Scan History",
     "timestamp": "Timestamp",
     "item": "Item",
     "type": "Type",
@@ -230,6 +230,8 @@
     "deleteFailed": "Could not delete this scan. Please try again.",
     "allTypes": "All types",
     "allStatus": "All statuses",
+    "totalScans": "{{total}} scans",
+    "viewAnalytics": "View All Analytics",
     "pageInfo": "Page {{page}} of {{totalPages}} ({{total}} scans)"
   },
   "preferences": {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Search,
@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   HelpCircle,
   Inbox,
+  BarChart3,
 } from 'lucide-react';
 import { api } from '../../lib/api.js';
 import { formatDateTime, truncate } from '../../lib/format.js';
@@ -198,6 +199,44 @@ export const HistoryTable: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Header: title + prominent bulk-delete action */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-baseline gap-2">
+          <h2 className="text-sm font-bold text-white">{t('history.title')}</h2>
+          {total > 0 && (
+            <span className="text-xs text-muted">
+              {t('history.totalScans', { total })}
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <Link
+            to="/analytics"
+            className="group inline-flex items-center gap-1.5 px-3.5 py-2 rounded-btn bg-brand-accent/10 border border-brand-accent/40 text-brand-accent text-xs font-bold whitespace-nowrap hover:bg-brand-accent hover:text-white active:scale-[0.98] transition-all"
+          >
+            <BarChart3 className="w-4 h-4 shrink-0" />
+            <span>{t('history.viewAnalytics')}</span>
+            <ChevronRight className="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5" />
+          </Link>
+
+          {hasHistory && (
+            <button
+              type="button"
+              onClick={() => {
+                setClearConfirmText('');
+                setShowClearModal(true);
+              }}
+              title={t('history.clearAll')}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-btn bg-status-danger/15 border border-status-danger/50 text-status-danger text-xs font-bold whitespace-nowrap hover:bg-status-danger hover:text-white active:scale-[0.98] transition-all"
+            >
+              <Trash2 className="w-4 h-4 shrink-0" />
+              <span>{t('history.clearAll')}</span>
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Search & Filters Bar */}
       <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
         <form onSubmit={handleSearchSubmit} className="relative w-full sm:w-64">
@@ -239,22 +278,6 @@ export const HistoryTable: React.FC = () => {
             <option value="warning">Warning</option>
             <option value="clean">Clean</option>
           </select>
-
-          {hasHistory && (
-            <button
-              type="button"
-              onClick={() => {
-                setClearConfirmText('');
-                setShowClearModal(true);
-              }}
-              title={t('history.clearAll')}
-              aria-label={t('history.clearAll')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-btn bg-status-danger/15 border border-status-danger/40 text-status-danger text-xs font-semibold whitespace-nowrap hover:bg-status-danger hover:text-white transition-colors"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">{t('history.clearAll')}</span>
-            </button>
-          )}
         </div>
       </div>
 

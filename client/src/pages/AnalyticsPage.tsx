@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   ShieldAlert,
   AlertTriangle,
   ShieldCheck,
   Activity,
-  ArrowRight,
   TrendingUp,
   PieChart as PieIcon,
   HelpCircle,
@@ -164,13 +162,6 @@ export const AnalyticsPage: React.FC = () => {
               <h3 className="text-sm font-bold text-white">
                 {t('analytics.recentActivity')}
               </h3>
-              <Link
-                to="/dashboard?tab=history"
-                className="group inline-flex items-center gap-1.5 text-xs text-brand-accent hover:underline font-semibold"
-              >
-                <span>{t('analytics.viewAllHistory')}</span>
-                <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
-              </Link>
             </div>
 
             {recentActivities.length === 0 ? (
