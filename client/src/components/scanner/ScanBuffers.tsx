@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AlertCircle, RefreshCw, ArrowLeft } from 'lucide-react';
 import { api } from '../../lib/api.js';
+import { isFinalState } from '../../lib/scanState.js';
 
 interface ScanBuffersProps {
   scanId: string;
@@ -47,7 +48,7 @@ export const ScanBuffers: React.FC<ScanBuffersProps> = ({
       try {
         const res = await api.getScanStatus(scanId);
 
-        if (res.state === 'completed' || res.state === 'not_found' || res.state === 'failed') {
+        if (isFinalState(res.state)) {
           // Putar BufferCat sekali, lalu tampilkan hasil. Dijaga singkat (280ms)
           // supaya hasil yang sudah siap tidak terasa tertahan.
           setFinishing(true);

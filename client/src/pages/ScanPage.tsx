@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ShieldAlert } from 'lucide-react';
 import { api } from '../lib/api.js';
+import { isFinalState } from '../lib/scanState.js';
 import { ScanBuffers } from '../components/scanner/ScanBuffers.js';
 import { ResultCard } from '../components/scanner/ResultCard.js';
 import { ResultReveal } from '../components/scanner/ResultReveal.js';
@@ -30,9 +31,10 @@ export const ScanPage: React.FC = () => {
   // report page would immediately bounce the user back into it.
   const autoOpenedReport = useRef(false);
 
-  // Final state = no need to keep waiting / polling.
-  const isFinal = (state?: ScanState) =>
-    state === 'completed' || state === 'not_found' || state === 'failed';
+  // Final state = no need to keep waiting / polling. Single source of truth in
+  // lib/scanState.ts, shared with ScanBuffers, so a newly-terminal state can
+  // never be recognised in one place but not the other.
+  const isFinal = (state?: ScanState) => isFinalState(state);
 
   const fetchScan = useCallback(async () => {
     if (!scanId) return;

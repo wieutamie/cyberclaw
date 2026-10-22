@@ -1,6 +1,72 @@
 import cron from 'node-cron';
 import { supabase, memoryStore } from '../lib/supabase.js';
 import { logger } from '../lib/logger.js';
+import { env } from '../config/env.js';
+
+/**
+ * Finalise scans that were abandoned mid-flight.
+ *
+ * The lazy reaper in `ScanService.getScanStatus` only fires when someone opens
+ * the scan — a scan the user never revisits stays `in_progress` forever. Those
+ * rows are the ones that used to be silently missing from the Analytics donut,
+ * so they must eventually reach a terminal state even with no traffic.
+ *
+ * This sweep is deliberately conservative: it only touches scans that are still
+ * unresolved AND whose last activity is older than `VT_SCAN_MAX_AGE_MS`.
+ */
+export async function runStaleScanSweep(): Promise<number> {
+  const maxAgeMs = env.VT_SCAN_MAX_AGE_MS || 30 * 60 * 1000;
+  const cutoff = new Date(Date.now() - maxAgeMs).toISOString();
+  const UNRESOLVED = ['uploading', 'queued', 'in_progress'];
+
+  let swept = 0;
+
+  if (supabase) {
+    try {
+      // Activity is `last_polled_at` when present, otherwise `created_at`.
+      // Using created_at alone would sweep a freshly rescanned OLD record
+      // (rescan reuses the row), which is exactly what we must not do.
+      const { data, error } = await supabase
+        .from('scans')
+        .update({ state: 'timeout' })
+        .in('state', UNRESOLVED)
+        .is('verdict', null)
+        .or(
+          `and(last_polled_at.is.null,created_at.lt.${cutoff}),last_polled_at.lt.${cutoff}`
+        )
+        .select('id');
+
+      if (error) {
+        logger.warn({ err: error }, 'Stale scan sweep failed');
+      } else {
+        swept = data?.length ?? 0;
+      }
+    } catch (err) {
+      logger.warn({ err }, 'Stale scan sweep threw');
+    }
+  }
+
+  // Always sweep the in-process store too; it is the only store when Supabase
+  // is not configured (local dev / preview).
+  for (const [scanId, scan] of memoryStore.scans.entries()) {
+    const unresolved = UNRESOLVED.includes(scan.state);
+    if (!unresolved || scan.verdict) continue;
+    const lastActivity = Math.max(
+      new Date(scan.created_at).getTime(),
+      scan.last_polled_at ? new Date(scan.last_polled_at).getTime() : 0
+    );
+    if (Date.now() - lastActivity > maxAgeMs) {
+      scan.state = 'timeout';
+      memoryStore.scans.set(scanId, scan);
+      swept++;
+    }
+  }
+
+  if (swept > 0) {
+    logger.info({ swept }, 'Finalised abandoned scans as timeout');
+  }
+  return swept;
+}
 
 /**
  * Runs the history-retention cleanup once: deletes scans older than each
@@ -12,6 +78,15 @@ import { logger } from '../lib/logger.js';
  */
 export async function runRetentionCleanup(): Promise<void> {
   logger.info('Starting history retention cleanup job...');
+
+  // Finalise abandoned scans first — they are still within the retention
+  // window, so they would otherwise linger as permanently-pending rows.
+  try {
+    await runStaleScanSweep();
+  } catch (err) {
+    logger.warn({ err }, 'Stale scan sweep failed (continuing with retention)');
+  }
+
   try {
     if (supabase) {
       // Query users with history_retention_days set

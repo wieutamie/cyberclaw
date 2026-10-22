@@ -1,6 +1,7 @@
 import { supabase, memoryStore } from "../lib/supabase.js";
 import { ScanRecord } from "../types/index.js";
 import { SettingsService } from "./settings.service.js";
+import { classifyScan, ScanBucket } from "../lib/analyticsBuckets.js";
 
 export interface AnalyticsResponse {
   kpi: {
@@ -8,6 +9,9 @@ export interface AnalyticsResponse {
     danger: number;
     warning: number;
     clean: number;
+    notFound: number;
+    failed: number;
+    pending: number;
   };
   donut: {
     name: string;
@@ -20,6 +24,9 @@ export interface AnalyticsResponse {
     danger: number;
     warning: number;
     clean: number;
+    notFound: number;
+    pending: number;
+    failed: number;
   }[];
   recent: ScanRecord[];
 }
@@ -78,15 +85,19 @@ export class AnalyticsService {
           .gte("created_at", marginIso)
           .order("created_at", { ascending: false });
 
-        if (!error && data && data.length > 0) {
-          allUserScans = data as ScanRecord[];
+        // Only fall back to memoryStore on a REAL query error. An empty result
+        // is a valid answer (the user may simply have no scans in range) and
+        // must NOT be replaced by stale in-memory data — that would make the
+        // totals jump around between requests.
+        if (!error) {
+          allUserScans = (data || []) as ScanRecord[];
         }
       } catch {
         // Fallback to memoryStore
       }
     }
 
-    if (allUserScans.length === 0) {
+    if (!supabase) {
       allUserScans = Array.from(memoryStore.scans.values())
         .filter((s) => s.user_id === userId && s.created_at >= marginIso)
         .sort(
@@ -102,38 +113,66 @@ export class AnalyticsService {
       (s) => tzDateKey(new Date(s.created_at), tz) >= oldestKey
     );
 
-    let dangerCount = 0;
-    let warningCount = 0;
-    let cleanCount = 0;
-    let notFoundCount = 0;
+    // Every scan must land in exactly ONE bucket, so that
+    // danger + warning + clean + notFound + failed + pending === totalScans.
+    // Previously `failed` and `in_progress` scans were counted in totalScans
+    // but fell through every branch, so the donut (which sums its own slices)
+    // showed a smaller total than the KPI card above it.
+    const buckets = {
+      danger: 0,
+      warning: 0,
+      clean: 0,
+      notFound: 0,
+      failed: 0,
+      pending: 0,
+    };
+
+    type DayCounts = {
+      total: number;
+      danger: number;
+      warning: number;
+      clean: number;
+      notFound: number;
+      pending: number;
+      failed: number;
+    };
 
     // Date grouping map
-    const dailyMap = new Map<
-      string,
-      { total: number; danger: number; warning: number; clean: number }
-    >();
+    const dailyMap = new Map<string, DayCounts>();
 
     // Pre-populate all days in range (user-tz day keys) with 0
     for (let i = days - 1; i >= 0; i--) {
       const key = tzDateKey(new Date(now - i * DAY_MS), tz);
       if (!dailyMap.has(key)) {
-        dailyMap.set(key, { total: 0, danger: 0, warning: 0, clean: 0 });
+        dailyMap.set(key, {
+          total: 0,
+          danger: 0,
+          warning: 0,
+          clean: 0,
+          notFound: 0,
+          pending: 0,
+          failed: 0,
+        });
       }
     }
 
     for (const scan of allUserScans) {
-      if (scan.verdict === "danger") dangerCount++;
-      else if (scan.verdict === "warning") warningCount++;
-      else if (scan.verdict === "clean") cleanCount++;
-      else if (scan.state === "not_found") notFoundCount++;
+      // Classify exactly once via the shared pure helper, so this rule is
+      // unit-tested and cannot drift from the bucket list below.
+      const bucket: ScanBucket = classifyScan(scan);
+
+      buckets[bucket]++;
 
       const dateKey = tzDateKey(new Date(scan.created_at), tz);
-      if (dailyMap.has(dateKey)) {
-        const entry = dailyMap.get(dateKey)!;
+      const entry = dailyMap.get(dateKey);
+      if (entry) {
         entry.total++;
-        if (scan.verdict === "danger") entry.danger++;
-        else if (scan.verdict === "warning") entry.warning++;
-        else if (scan.verdict === "clean") entry.clean++;
+        if (bucket === "danger") entry.danger++;
+        else if (bucket === "warning") entry.warning++;
+        else if (bucket === "clean") entry.clean++;
+        else if (bucket === "notFound") entry.notFound++;
+        else if (bucket === "failed") entry.failed++;
+        else entry.pending++;
       }
     }
 
@@ -142,19 +181,56 @@ export class AnalyticsService {
       ...counts,
     }));
 
+    const donut = [
+      { name: "Danger", value: buckets.danger, color: "#FF0000" },
+      { name: "Warning", value: buckets.warning, color: "#FF7300" },
+      { name: "Clean", value: buckets.clean, color: "#11FF00" },
+      { name: "Not Found", value: buckets.notFound, color: "#64748B" },
+      { name: "Pending", value: buckets.pending, color: "#38BDF8" },
+      { name: "Failed", value: buckets.failed, color: "#7F1D1D" },
+    ];
+
+    const totalScans = allUserScans.length;
+
+    // Invariant: the donut centre reads its own slice sum, so it must match
+    // the Total Scans KPI exactly. If a future ScanState is added without a
+    // bucket, this fires instead of silently under-reporting again.
+    const bucketSum =
+      buckets.danger +
+      buckets.warning +
+      buckets.clean +
+      buckets.notFound +
+      buckets.failed +
+      buckets.pending;
+    if (bucketSum !== totalScans) {
+      throw new Error(
+        `Analytics bucket mismatch: ${bucketSum} classified vs ${totalScans} total`
+      );
+    }
+
+    // Same invariant per day: the line chart stacks these series, so a day
+    // whose parts don't add up to `total` would draw a misleading curve.
+    for (const d of daily) {
+      const daySum =
+        d.danger + d.warning + d.clean + d.notFound + d.pending + d.failed;
+      if (daySum !== d.total) {
+        throw new Error(
+          `Analytics daily mismatch on ${d.date}: ${daySum} classified vs ${d.total} total`
+        );
+      }
+    }
+
     return {
       kpi: {
-        totalScans: allUserScans.length,
-        danger: dangerCount,
-        warning: warningCount,
-        clean: cleanCount,
+        totalScans,
+        danger: buckets.danger,
+        warning: buckets.warning,
+        clean: buckets.clean,
+        notFound: buckets.notFound,
+        failed: buckets.failed,
+        pending: buckets.pending,
       },
-      donut: [
-        { name: "Danger", value: dangerCount, color: "#FF0000" },
-        { name: "Warning", value: warningCount, color: "#FF7300" },
-        { name: "Clean", value: cleanCount, color: "#11FF00" },
-        { name: "Not Found", value: notFoundCount, color: "#64748B" },
-      ],
+      donut,
       daily,
       recent: allUserScans.slice(0, 10),
     };

@@ -34,6 +34,16 @@ const envSchema = z.object({
     .optional()
     .default('')
     .transform((val) => (val ? parseInt(val, 10) || 0 : 0)),
+  // Umur maksimum sebuah scan boleh tetap `in_progress`/`queued` sebelum
+  // dianggap menggantung dan ditandai `timeout`. VirusTotal biasanya selesai
+  // dalam hitungan detik sampai beberapa menit; 30 menit sudah sangat longgar.
+  // Tanpa batas ini, scan yang ditinggal user (tab ditutup sebelum polling
+  // selesai) akan menggantung selamanya dan tidak pernah masuk statistik.
+  VT_SCAN_MAX_AGE_MS: z
+    .string()
+    .optional()
+    .default('')
+    .transform((val) => (val ? parseInt(val, 10) || 0 : 0)),
   MAX_UPLOAD_MB: z.string().default('32').transform((val) => parseInt(val, 10)),
   LOG_LEVEL: z.string().default('info'),
 });

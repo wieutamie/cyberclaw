@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { formatDateTime, formatBytes, truncate } from '../../lib/format.js';
 import { totalEngines } from '../../lib/stats.js';
+import { isErrorState } from '../../lib/scanState.js';
 import { playCatSound } from '../../lib/catSounds.js';
 import { useSettings } from '../../context/SettingsContext.js';
 import { ScanRecord } from '../../types/index.js';
@@ -111,8 +112,11 @@ export const ResultCard: React.FC<ResultCardProps> = ({ scan, onScanAnother }) =
     );
   }
 
-  // State: Failed (real upstream error — no fabricated result)
-  if (scan.state === 'failed') {
+  // State: Failed / Timeout / Cancelled (real upstream error or abandoned —
+  // no fabricated result). `timeout` is produced by the server-side reaper
+  // when a scan is abandoned mid-flight, so it needs the same treatment as a
+  // hard failure: tell the user and offer a retry.
+  if (isErrorState(scan.state)) {
     return (
       <div className="w-full max-w-[860px] mx-auto bg-surface border-2 border-status-danger/60 rounded-card p-6 sm:p-8 shadow-card flex flex-col items-center text-center animate-in zoom-in-95 duration-200">
         <div className="w-20 h-20 rounded-full bg-status-danger/20 text-status-danger flex items-center justify-center mb-4">

@@ -363,8 +363,46 @@ export class ScanService {
       };
     }
 
-    // Polling VT if vt_analysis_id exists
+    if (scan.state === 'timeout' || scan.state === 'cancelled') {
+      return {
+        state: scan.state,
+        progressLabel: 'Completed',
+        verdict: scan.verdict,
+      };
+    }
+
     const now = Date.now();
+
+    // ---- Reaper: jangan biarkan scan menggantung selamanya ------------------
+    // Kalau user menutup tab sebelum analisis selesai, tidak ada yang memanggil
+    // endpoint ini lagi dan scan tertinggal `in_progress` permanen. Scan seperti
+    // itu tetap terhitung di Total Scans tapi tidak pernah masuk bucket mana
+    // pun, dan UI akan berputar tanpa akhir kalau dibuka kembali. Setelah
+    // melewati ambang, tandai `timeout` supaya jadi hasil final yang jujur.
+    // Cek dilakukan SEBELUM memanggil VT agar scan basi tidak membakar kuota.
+    const maxAgeMs = env.VT_SCAN_MAX_AGE_MS || 30 * 60 * 1000;
+    // Ukur dari aktivitas TERAKHIR, bukan created_at: `rescan` memakai ulang
+    // record lama, jadi created_at bisa berhari-hari lalu dan scan yang baru
+    // saja di-rescan akan langsung di-timeout kalau patokannya created_at.
+    const lastActivity = Math.max(
+      new Date(scan.created_at).getTime(),
+      scan.last_polled_at ? new Date(scan.last_polled_at).getTime() : 0
+    );
+    const age = now - lastActivity;
+    if (age > maxAgeMs) {
+      logger.warn(
+        { scanId, ageMs: age, state: scan.state },
+        'Scan exceeded max age while unresolved — marking timeout'
+      );
+      await this.updateScan(scanId, { state: 'timeout' });
+      return {
+        state: 'timeout',
+        progressLabel: 'Completed',
+        verdict: scan.verdict,
+      };
+    }
+
+    // Polling VT if vt_analysis_id exists
     const lastPolled = scan.last_polled_at ? new Date(scan.last_polled_at).getTime() : 0;
     // Jeda polling diturunkan dari kuota VirusTotal, bukan angka mati 15s.
     // Dengan kuota gratis 4 req/menit → 15s (tetap aman). Kalau key berbayar
@@ -559,6 +597,8 @@ export class ScanService {
           vt_analysis_id: res.id,
           state: 'queued',
           verdict: null,
+          // Reset the reaper clock: this is a NEW analysis of an old record.
+          last_polled_at: new Date().toISOString(),
         });
       } catch (err) {
         logger.warn({ err }, 'Rescan file failed');
@@ -571,6 +611,8 @@ export class ScanService {
           vt_analysis_id: res.id,
           state: 'queued',
           verdict: null,
+          // Reset the reaper clock: this is a NEW analysis of an old record.
+          last_polled_at: new Date().toISOString(),
         });
       } catch (err) {
         logger.warn({ err }, 'Rescan url failed');

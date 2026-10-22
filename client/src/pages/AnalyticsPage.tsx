@@ -8,6 +8,8 @@ import {
   TrendingUp,
   PieChart as PieIcon,
   HelpCircle,
+  Clock,
+  XCircle,
 } from 'lucide-react';
 import { api } from '../lib/api.js';
 import { formatDateTime, truncate } from '../lib/format.js';
@@ -127,6 +129,51 @@ export const AnalyticsPage: React.FC = () => {
               </div>
               <span className="text-3xl font-bold font-mono text-status-clean">
                 <AnimatedNumber value={kpi.clean} />
+              </span>
+            </div>
+          </div>
+
+          {/*
+            Breakdown strip for the non-verdict outcomes. These are deliberately
+            NOT KPI cards: they are not verdicts, they are "work not yet done".
+            They exist so that Total Scans is fully accounted for — every scan
+            in the range lands in exactly one of Danger / Warning / Clean /
+            Not Found / Pending / Failed, which is the same sum the donut shows.
+          */}
+          <div className="animate-fade-rise [animation-delay:200ms] grid grid-cols-3 gap-4">
+            <div className="bg-surface/60 border border-surface-alt rounded-xl px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-muted">
+                <HelpCircle className="w-3.5 h-3.5" />
+                <span className="text-[11px] font-semibold uppercase tracking-wider">
+                  {t('analytics.notFoundScans')}
+                </span>
+              </div>
+              <span className="text-lg font-bold font-mono text-[#94A3B8]">
+                <AnimatedNumber value={kpi.notFound ?? 0} />
+              </span>
+            </div>
+
+            <div className="bg-surface/60 border border-surface-alt rounded-xl px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-muted">
+                <Clock className="w-3.5 h-3.5" />
+                <span className="text-[11px] font-semibold uppercase tracking-wider">
+                  {t('analytics.pendingScans')}
+                </span>
+              </div>
+              <span className="text-lg font-bold font-mono text-[#38BDF8]">
+                <AnimatedNumber value={kpi.pending ?? 0} />
+              </span>
+            </div>
+
+            <div className="bg-surface/60 border border-surface-alt rounded-xl px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-muted">
+                <XCircle className="w-3.5 h-3.5" />
+                <span className="text-[11px] font-semibold uppercase tracking-wider">
+                  {t('analytics.failedScans')}
+                </span>
+              </div>
+              <span className="text-lg font-bold font-mono text-[#B91C1C]">
+                <AnimatedNumber value={kpi.failed ?? 0} />
               </span>
             </div>
           </div>

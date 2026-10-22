@@ -1,5 +1,6 @@
 import { supabase, memoryStore } from '../lib/supabase.js';
 import { ScanRecord, ScanType, Verdict } from '../types/index.js';
+import { totalEngines } from '../lib/stats.js';
 
 export interface HistoryQueryParams {
   page?: number;
@@ -138,9 +139,7 @@ export class HistoryService {
     const headers = ['ID', 'Timestamp', 'Type', 'Item Label', 'Verdict', 'State', 'Malicious', 'Total Engines', 'SHA256'];
     const rows = list.map((s) => {
       const mal = s.stats?.malicious ?? 0;
-      const totalEng = s.stats
-        ? s.stats.malicious + s.stats.suspicious + s.stats.harmless + s.stats.undetected
-        : 0;
+      const totalEng = totalEngines(s.stats);
       return [
         s.id,
         s.created_at,

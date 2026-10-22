@@ -17,6 +17,9 @@ interface DailyData {
   danger: number;
   warning: number;
   clean: number;
+  notFound: number;
+  pending: number;
+  failed: number;
 }
 
 interface ScansLineProps {
@@ -101,6 +104,12 @@ export const ScansLine: React.FC<ScansLineProps> = ({ data }) => {
                     <span className="text-status-clean">
                       Clean: <strong className="font-mono">{fullItem.clean}</strong>
                     </span>
+                    <span className="text-[#38BDF8]">
+                      Pending: <strong className="font-mono">{fullItem.pending ?? 0}</strong>
+                    </span>
+                    <span className="text-[#B91C1C]">
+                      Failed: <strong className="font-mono">{fullItem.failed ?? 0}</strong>
+                    </span>
                   </div>
                 );
               }
@@ -142,6 +151,24 @@ export const ScansLine: React.FC<ScansLineProps> = ({ data }) => {
             name="Clean"
             stroke="#11FF00"
             strokeWidth={1.5}
+            dot={false}
+          />
+          <Line
+            type="monotone"
+            dataKey="pending"
+            name="Pending"
+            stroke="#38BDF8"
+            strokeWidth={1.5}
+            strokeDasharray="4 3"
+            dot={false}
+          />
+          <Line
+            type="monotone"
+            dataKey="failed"
+            name="Failed"
+            stroke="#B91C1C"
+            strokeWidth={1.5}
+            strokeDasharray="4 3"
             dot={false}
           />
         </LineChart>
