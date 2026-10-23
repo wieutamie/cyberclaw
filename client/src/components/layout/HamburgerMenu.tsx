@@ -88,7 +88,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ isOpen, onClose })
       ref={menuRef}
       role="menu"
       id="app-nav-menu"
-      aria-label="Navigation"
+      aria-label={t('nav.navigation')}
       className="absolute right-0 top-[calc(100%+10px)] w-60 bg-surface border border-white/10 rounded-card shadow-[0_16px_40px_rgba(0,0,0,0.5)] p-1.5 z-50 origin-top-right animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-150"
     >
       <div className="flex flex-col gap-0.5">

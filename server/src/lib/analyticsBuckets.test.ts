@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { classifyScan, ALL_BUCKETS } from './analyticsBuckets.js';
+import { classifyScan, ALL_BUCKETS, toDonutSlices } from './analyticsBuckets.js';
 
 describe('classifyScan', () => {
   it('maps each verdict to its own bucket', () => {
@@ -67,5 +67,41 @@ describe('analytics totals invariant', () => {
     expect(counts.failed).toBe(8);
     expect(counts.pending).toBe(6);
     expect(counts.notFound).toBe(2);
+  });
+});
+
+describe('toDonutSlices', () => {
+  const counts = {
+    danger: 12,
+    warning: 4,
+    clean: 41,
+    notFound: 2,
+    pending: 6,
+    failed: 8,
+  };
+
+  it('emits exactly the four slices the mockup legend shows', () => {
+    const slices = toDonutSlices(counts);
+    expect(slices.map((s) => s.key)).toEqual(['danger', 'warning', 'clean', 'undetected']);
+  });
+
+  it('keeps the invariant: slice sum === sum of all six buckets', () => {
+    const slices = toDonutSlices(counts);
+    const sliceSum = slices.reduce((a, s) => a + s.value, 0);
+    const bucketSum = Object.values(counts).reduce((a, b) => a + b, 0);
+    expect(sliceSum).toBe(bucketSum);
+    expect(sliceSum).toBe(73);
+  });
+
+  it('merges notFound + pending + failed into `undetected` and keeps the breakdown', () => {
+    const undetected = toDonutSlices(counts).find((s) => s.key === 'undetected')!;
+    expect(undetected.value).toBe(16);
+    expect(undetected.breakdown).toEqual({ notFound: 2, pending: 6, failed: 8 });
+  });
+
+  it('leaves the verdict slices without a breakdown', () => {
+    for (const s of toDonutSlices(counts)) {
+      if (s.key !== 'undetected') expect(s.breakdown).toBeNull();
+    }
   });
 });

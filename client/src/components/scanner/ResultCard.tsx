@@ -463,7 +463,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ scan, onScanAnother }) =
               <button
                 onClick={() => handleCopy(itemSha256)}
                 className="p-1 rounded bg-surface hover:bg-surface-alt text-muted hover:text-white transition-colors"
-                title="Copy SHA-256"
+                title={t('report.copySha256')}
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-status-clean" /> : <Copy className="w-3.5 h-3.5" />}
               </button>

@@ -88,8 +88,8 @@ export const ScanPage: React.FC = () => {
   if (error || !scan) {
     return (
       <div className="animate-fade-rise flex flex-col items-center justify-center min-h-[50vh] text-center p-6">
-        <h2 className="text-xl font-bold text-status-danger mb-2">Scan Not Found</h2>
-        <p className="text-sm text-muted mb-4">{error || 'Scan data is not available.'}</p>
+        <h2 className="text-xl font-bold text-status-danger mb-2">{t('scan.notFoundTitle')}</h2>
+        <p className="text-sm text-muted mb-4">{error || t('scan.notFoundBody')}</p>
         <button
           onClick={() => navigate('/dashboard')}
           className="px-5 py-2 rounded-btn bg-brand text-white font-bold text-xs hover:bg-brand-accent transition-colors"

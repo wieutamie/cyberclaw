@@ -41,7 +41,7 @@ export const FullReportPage: React.FC = () => {
   if (error || !scan) {
     return (
       <div className="animate-fade-rise flex flex-col items-center justify-center min-h-[50vh] text-center p-6">
-        <h2 className="text-xl font-bold text-status-danger mb-2">Report Not Found</h2>
+        <h2 className="text-xl font-bold text-status-danger mb-2">{t('report.notFoundTitle')}</h2>
         <p className="text-sm text-muted mb-4">{error}</p>
         <button
           onClick={() => navigate('/dashboard')}
@@ -64,7 +64,7 @@ export const FullReportPage: React.FC = () => {
           className="group inline-flex items-center gap-2 text-xs font-semibold text-brand-accent hover:underline"
         >
           <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
-          <span>Back to Verdict Summary</span>
+          <span>{t('report.backToSummary')}</span>
         </Link>
 
         <span className="text-xs font-mono text-muted truncate max-w-xs">

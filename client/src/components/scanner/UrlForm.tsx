@@ -37,16 +37,16 @@ export const UrlForm: React.FC<UrlFormProps> = ({ onScan, disabled = false }) =>
         host.startsWith('192.168.') ||
         /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host)
       ) {
-        return { valid: false, msg: 'Local or private addresses cannot be scanned.' };
+        return { valid: false, msg: t('scanner.urlErrPrivate') };
       }
 
       if (!host.includes('.')) {
-        return { valid: false, msg: 'The target domain must have a valid host.' };
+        return { valid: false, msg: t('scanner.urlErrHost') };
       }
 
       return { valid: true, normalized: input };
     } catch {
-      return { valid: false, msg: 'Invalid URL format.' };
+      return { valid: false, msg: t('scanner.urlErrFormat') };
     }
   };
 
@@ -62,7 +62,7 @@ export const UrlForm: React.FC<UrlFormProps> = ({ onScan, disabled = false }) =>
 
     const res = validateUrl(url);
     if (!res.valid || !res.normalized) {
-      setError(res.msg || 'Invalid URL');
+      setError(res.msg || t('scanner.urlErrFormat'));
       return;
     }
 

@@ -2,10 +2,21 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
+interface DonutBreakdown {
+  notFound: number;
+  pending: number;
+  failed: number;
+}
+
 interface DonutItem {
+  /** Stable i18n key suffix (danger | warning | clean | undetected). */
+  key?: string;
+  /** English fallback name, kept for non-i18n consumers of the API. */
   name: string;
   value: number;
   color: string;
+  /** Only set for the merged `undetected` slice. */
+  breakdown?: DonutBreakdown | null;
 }
 
 interface StatusDonutProps {
@@ -16,6 +27,15 @@ export const StatusDonut: React.FC<StatusDonutProps> = ({ data }) => {
   const { t } = useTranslation();
   const total = data.reduce((acc, curr) => acc + curr.value, 0);
 
+  // Server sends a stable `key`; older cached payloads may only have `name`,
+  // so fall back to the lowercased name before giving up.
+  const labelFor = (item: DonutItem) => {
+    const key =
+      item.key || (item.name ? item.name.toLowerCase().replace(/\s+/g, '') : '');
+    const translated = key ? t(`analytics.slice.${key}`, { defaultValue: '' }) : '';
+    return translated || item.name;
+  };
+
   if (total === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-muted text-sm">
@@ -24,22 +44,39 @@ export const StatusDonut: React.FC<StatusDonutProps> = ({ data }) => {
     );
   }
 
+  const visible = data.filter((d) => d.value > 0);
+  const pctOf = (v: number) => (total > 0 ? (v / total) * 100 : 0);
+
   return (
-    <div className="flex flex-col md:flex-row items-center justify-around gap-6 h-64">
-      {/* Chart with centered total */}
-      <div className="relative w-48 h-48">
+    <div className="flex flex-col items-center justify-center gap-3 h-full min-h-[16rem]">
+      <div className="relative w-full max-w-[15rem] aspect-square">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Tooltip
               content={({ active, payload }) => {
                 if (active && payload && payload.length) {
                   const d = payload[0].payload as DonutItem;
-                  const pct = ((d.value / total) * 100).toFixed(1);
+                  const pct = pctOf(d.value).toFixed(1);
                   return (
                     <div className="bg-surface-alt border border-surface px-3 py-1.5 rounded-lg shadow-lg text-xs">
-                      <span className="font-semibold text-white">{d.name}: </span>
-                      <span className="font-mono text-brand-accent">{d.value}</span>
-                      <span className="text-muted"> ({pct}%)</span>
+                      <div>
+                        <span className="font-semibold text-white">{labelFor(d)}: </span>
+                        <span className="font-mono text-brand-accent">{d.value}</span>
+                        <span className="text-muted"> ({pct}%)</span>
+                      </div>
+                      {d.breakdown && (
+                        <div className="mt-1 pt-1 border-t border-surface text-[11px] text-muted flex flex-col gap-0.5">
+                          <span>
+                            {t('analytics.slice.notFound')}: {d.breakdown.notFound}
+                          </span>
+                          <span>
+                            {t('analytics.slice.pending')}: {d.breakdown.pending}
+                          </span>
+                          <span>
+                            {t('analytics.slice.failed')}: {d.breakdown.failed}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   );
                 }
@@ -47,52 +84,44 @@ export const StatusDonut: React.FC<StatusDonutProps> = ({ data }) => {
               }}
             />
             <Pie
-              data={data}
+              data={visible}
               cx="50%"
               cy="50%"
-              innerRadius="60%"
-              outerRadius="88%"
-              paddingAngle={4}
+              innerRadius="55%"
+              outerRadius="95%"
+              paddingAngle={2}
               dataKey="value"
+              labelLine={false}
+              label={({ percent, index }) => {
+                const item = visible[index as number];
+                if (!item || pctOf(item.value) < 6) return '';
+                return `${Math.round((percent || 0) * 100)}%`;
+              }}
             >
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} stroke="#17183B" strokeWidth={2} />
+              {visible.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={entry.color}
+                  stroke="#17183B"
+                  strokeWidth={2}
+                />
               ))}
             </Pie>
           </PieChart>
         </ResponsiveContainer>
-
-        {/* Centered Total */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span className="text-2xl font-bold font-mono text-white leading-none">
-            {total}
-          </span>
-          <span className="text-[11px] text-muted uppercase tracking-wider mt-0.5">
-            Total
-          </span>
-        </div>
       </div>
 
-      {/* Legend with percentages */}
-      <div className="flex flex-col gap-2.5 w-full md:w-48 text-xs">
-        {data.map((item) => {
-          const pct = total > 0 ? ((item.value / total) * 100).toFixed(1) : '0';
-          return (
-            <div key={item.name} className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span
-                  className="w-3 h-3 rounded-full shrink-0"
-                  style={{ backgroundColor: item.color }}
-                />
-                <span className="text-gray-300 font-medium">{item.name}</span>
-              </div>
-              <div className="flex items-center gap-2 font-mono">
-                <span className="text-white font-bold">{item.value}</span>
-                <span className="text-muted text-[11px]">({pct}%)</span>
-              </div>
-            </div>
-          );
-        })}
+      {/* Legend below the ring, matching the mockup: colour dot + label. */}
+      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[11px]">
+        {visible.map((item) => (
+          <div key={labelFor(item)} className="flex items-center gap-1.5">
+            <span
+              className="w-2.5 h-2.5 rounded-full shrink-0"
+              style={{ backgroundColor: item.color }}
+            />
+            <span className="text-gray-300 font-semibold">{labelFor(item)}</span>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -87,7 +87,7 @@ export const ScanTabBar: React.FC<ScanTabBarProps> = ({
     <div
       ref={listRef}
       role="tablist"
-      aria-label="Scan mode"
+      aria-label={t('dashboard.scanModeAria')}
       className="relative"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => {

@@ -22,6 +22,40 @@ export const ALL_BUCKETS: readonly ScanBucket[] = [
  * then `not_found` (a resolved "VT has nothing" outcome), then the terminal
  * error states, and everything else is still in flight.
  */
+export type DonutSliceKey = 'danger' | 'warning' | 'clean' | 'undetected';
+
+/**
+ * The four donut slices the UI mockup shows. `undetected` merges the three
+ * "no verdict" buckets (notFound + pending + failed) so the legend stays short,
+ * while `breakdown` keeps the individual counts for the tooltip.
+ *
+ * Invariant: sum(slices.value) === sum(all six buckets) === totalScans.
+ */
+export function toDonutSlices(counts: Record<ScanBucket, number>): Array<{
+  key: DonutSliceKey;
+  name: string;
+  value: number;
+  color: string;
+  breakdown: null | { notFound: number; pending: number; failed: number };
+}> {
+  return [
+    { key: 'danger', name: 'Danger', value: counts.danger, color: '#FF0000', breakdown: null },
+    { key: 'warning', name: 'Warning', value: counts.warning, color: '#FF7300', breakdown: null },
+    { key: 'clean', name: 'Clean', value: counts.clean, color: '#11FF00', breakdown: null },
+    {
+      key: 'undetected',
+      name: 'Undetected',
+      value: counts.notFound + counts.pending + counts.failed,
+      color: '#64748B',
+      breakdown: {
+        notFound: counts.notFound,
+        pending: counts.pending,
+        failed: counts.failed,
+      },
+    },
+  ];
+}
+
 export function classifyScan(scan: {
   verdict?: string | null;
   state?: string | null;

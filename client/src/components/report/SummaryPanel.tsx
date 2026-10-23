@@ -121,7 +121,7 @@ export const SummaryPanel: React.FC<SummaryPanelProps> = ({ scan, onRescanSucces
           </div>
           <div>
             <h3 className="text-xl font-bold text-white capitalize leading-tight">
-              {scan.verdict || 'Scan Result'}
+              {scan.verdict ? t('analytics.slice.' + scan.verdict) : t('report.scanResult')}
             </h3>
             <span className="text-xs text-muted">
               {t('common.securityVendors', { count: totalEnginesCount })}
@@ -175,7 +175,7 @@ export const SummaryPanel: React.FC<SummaryPanelProps> = ({ scan, onRescanSucces
 
         <div className="bg-surface-alt/60 rounded-xl p-3.5 flex flex-col gap-2 font-mono">
           <div className="flex justify-between items-center">
-            <span className="text-muted font-sans">Name / URL:</span>
+            <span className="text-muted font-sans">{t('report.nameOrUrl')}:</span>
             <span className="text-white truncate max-w-[170px]" title={scan.item_label}>
               {scan.item_label}
             </span>
@@ -183,14 +183,14 @@ export const SummaryPanel: React.FC<SummaryPanelProps> = ({ scan, onRescanSucces
 
           {scan.item_meta?.size !== undefined && (
             <div className="flex justify-between items-center">
-              <span className="text-muted font-sans">Size:</span>
+              <span className="text-muted font-sans">{t('report.size')}:</span>
               <span className="text-white">{formatBytes(scan.item_meta.size)}</span>
             </div>
           )}
 
           {scan.item_meta?.type_description && (
             <div className="flex justify-between items-center">
-              <span className="text-muted font-sans">Type:</span>
+              <span className="text-muted font-sans">{t('report.type')}:</span>
               <span className="text-white">{scan.item_meta.type_description}</span>
             </div>
           )}
@@ -232,7 +232,7 @@ export const SummaryPanel: React.FC<SummaryPanelProps> = ({ scan, onRescanSucces
           )}
 
           <div className="flex justify-between items-center pt-1 border-t border-surface-alt/60 font-sans">
-            <span className="text-muted">Last Analysis:</span>
+            <span className="text-muted">{t('report.lastAnalysis')}:</span>
             <span className="text-gray-300 text-[11px]">
               {formatDateTime(
                 scan.item_meta?.last_analysis_date ?? scan.completed_at ?? scan.created_at,
@@ -261,7 +261,7 @@ export const SummaryPanel: React.FC<SummaryPanelProps> = ({ scan, onRescanSucces
             className="flex items-center justify-center gap-2 py-2 px-3 rounded-btn bg-surface-alt border border-surface-alt text-gray-200 text-xs font-semibold hover:bg-surface-alt/80 transition-colors"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Export JSON</span>
+            <span>{t('report.exportJson')}</span>
           </button>
         </div>
 
@@ -271,7 +271,7 @@ export const SummaryPanel: React.FC<SummaryPanelProps> = ({ scan, onRescanSucces
             className="flex items-center justify-center gap-2 py-2 px-3 rounded-btn bg-surface-alt border border-surface-alt text-gray-200 text-xs font-semibold hover:bg-surface-alt/80 transition-colors"
           >
             {copiedField === 'link' ? <Check className="w-3.5 h-3.5 text-status-clean" /> : <Share2 className="w-3.5 h-3.5" />}
-            <span>{copiedField === 'link' ? 'Copied' : 'Copy Link'}</span>
+            <span>{copiedField === 'link' ? t('common.copied') : t('report.copyLink')}</span>
           </button>
 
           <button
@@ -279,7 +279,7 @@ export const SummaryPanel: React.FC<SummaryPanelProps> = ({ scan, onRescanSucces
             className="flex items-center justify-center gap-2 py-2 px-3 rounded-btn bg-surface-alt border border-surface-alt text-gray-200 text-xs font-semibold hover:bg-surface-alt/80 transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back to Result</span>
+            <span>{t('report.backToResult')}</span>
           </button>
         </div>
 

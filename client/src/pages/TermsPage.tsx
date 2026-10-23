@@ -1,11 +1,24 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Globe, ArrowLeft } from 'lucide-react';
 
 export const TermsPage: React.FC = () => {
+  const { t } = useTranslation();
+
+
   return (
     <div className="min-h-screen bg-bg text-white py-12 px-4 sm:px-6">
       <div className="max-w-3xl mx-auto bg-surface border border-surface-alt rounded-card p-6 sm:p-10 shadow-card">
+        {/* The legal text is intentionally English-only (binding wording), so
+            we surface that clearly instead of showing half-translated copy. */}
+        <div className="flex items-start gap-2.5 mb-6 px-3.5 py-2.5 rounded-xl bg-brand-accent/10 border border-brand-accent/30">
+          <Globe className="w-4 h-4 text-brand-accent shrink-0 mt-0.5" />
+          <p className="text-[11px] leading-relaxed text-gray-300">
+            {t('terms.englishOnly')}
+          </p>
+        </div>
+
         <div className="flex items-center gap-3 pb-6 border-b border-surface-alt mb-6">
           <div className="w-12 h-12 rounded-2xl bg-brand/20 flex items-center justify-center">
             <img src="/LogoCC.svg" alt="Cyber Claw" className="w-8 h-7 object-contain brightness-0 invert" />
@@ -63,7 +76,7 @@ export const TermsPage: React.FC = () => {
             className="inline-flex items-center gap-2 text-xs font-semibold text-brand-accent hover:underline"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to Dashboard</span>
+            <span>{t('common.backToDashboard')}</span>
           </Link>
 
           <span className="text-xs text-muted">

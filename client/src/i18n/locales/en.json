@@ -1,15 +1,11 @@
 {
   "common": {
-    "appName": "Cyber Claw",
     "tagline": "Scan. Detect. Stay Safe.",
     "dashboard": "Dashboard",
     "analytics": "Analytics",
     "preferences": "Preferences",
     "about": "About",
     "help": "Documentation",
-    "signOut": "Sign Out",
-    "signIn": "Sign In",
-    "signUp": "Sign Up",
     "loading": "Loading...",
     "save": "Save",
     "saved": "Saved successfully",
@@ -17,16 +13,15 @@
     "cancel": "Cancel",
     "continue": "Continue",
     "copied": "Copied to clipboard",
-    "copy": "Copy",
     "rescan": "Rescan",
     "poweredBy": "Powered by VirusTotal",
     "back": "Back",
-    "viewReport": "View Full Report",
     "scanAnother": "Scan Another",
     "backToDashboard": "Back to Dashboard",
     "noDataPeriod": "No data available for this period",
     "securityVendors": "{{count}} Security Vendors",
-    "error": "An error occurred"
+    "homeAria": "Cyber Claw — Dashboard",
+    "toggleMenuAria": "Toggle Navigation Menu"
   },
   "about": {
     "title": "About Cyber Claw",
@@ -63,10 +58,8 @@
     "org": "PT Infinite Learning Indonesia",
     "licenseLabel": "License",
     "licenseValue": "MIT",
-    "repoLabel": "Source Code",
     "repoUrl": "github.com/wieutamie/cyberclaw",
-    "back": "Back to Dashboard",
-    "helpLink": "Visit Help & Docs"
+    "back": "Back to Dashboard"
   },
   "help": {
     "title": "Documentation",
@@ -101,29 +94,9 @@
     "aboutLink": "Back to About"
   },
   "auth": {
-    "welcomeBack": "Welcome Back",
-    "signInSubtitle": "Sign in to your Cyber Claw account to continue.",
-    "createAccount": "Create New Account",
-    "signUpSubtitle": "Start scanning files, URLs, and hashes with state-of-the-art detection.",
-    "fullName": "Full Name",
     "username": "Username",
     "email": "Email",
-    "password": "Password",
-    "newPassword": "New Password",
-    "confirmPassword": "Confirm Password",
-    "rememberMe": "Remember Me (30 days)",
-    "forgotPassword": "Forgot Password?",
-    "dontHaveAccount": "Don't have an account? Sign Up",
-    "alreadyHaveAccount": "Already have an account? Sign In",
-    "agreeTerms": "I agree to the Terms of Service & Privacy Policy",
-    "termsLink": "Terms of Service",
-    "continueGoogle": "Continue with Google",
-    "continueGithub": "Continue with GitHub",
-    "resetPasswordTitle": "Reset Password",
-    "resetPasswordDesc": "Enter your email address to receive a password reset link.",
-    "sendResetLink": "Send Reset Link",
-    "resetSent": "If the email is registered, a reset link has been sent.",
-    "passwordRequirements": "Min 8 characters, at least 1 uppercase, 1 lowercase, 1 number."
+    "password": "Password"
   },
   "dashboard": {
     "heroTitle": "Smart scanning with\nVirusTotal integration",
@@ -136,7 +109,6 @@
     "tabHistory": "History",
     "dropzoneIdle": "Drag & drop file here or",
     "chooseFile": "Choose File",
-    "maxSize": "Maximum file size: 4 MB",
     "scanNow": "SCAN NOW",
     "privacyModalTitle": "Upload Privacy Notice",
     "privacyModalDesc": "Scanned files will be submitted to VirusTotal and shared with the global cybersecurity community. Do not upload confidential or personal data.",
@@ -146,7 +118,8 @@
     "urlHelp": "Enter complete URL including http:// or https://. Example: https://example.com",
     "hashLabel": "Target Hash",
     "hashPlaceholder": "Enter MD5, SHA-1, or SHA-256 hash",
-    "hashHelp": "MD5 = 32 chars, SHA-1 = 40 chars, SHA-256 = 64 hex characters"
+    "hashHelp": "MD5 = 32 chars, SHA-1 = 40 chars, SHA-256 = 64 hex characters",
+    "scanModeAria": "Scan mode"
   },
   "scan": {
     "scanningTitle": "Scanning",
@@ -173,8 +146,6 @@
     "timeout": "Timeout",
     "failure": "Failure",
     "unsupported": "Unsupported",
-    "breakdownTitle": "Detection Breakdown",
-    "detectionRatio": "Detection Ratio",
     "detectedLabel": "Detected",
     "respondingEnginesNote": "{{flagged}} of {{total}} responding engines flagged this item",
     "respondingEnginesLabel": "of {{total}} Engines",
@@ -190,8 +161,8 @@
     "scanFailedTitle": "Scan Failed",
     "scanFailedDesc": "We could not complete this scan because the scanning service returned an error. No results were fabricated. Please try again.",
     "retryScan": "Retry Scan",
-    "notConfiguredTitle": "Scanning service not configured",
-    "notConfiguredDesc": "The server is missing a VirusTotal API key. Scanning is unavailable until an administrator configures SYSTEM_VT_API_KEY."
+    "notFoundTitle": "Scan Not Found",
+    "notFoundBody": "Scan data is not available."
   },
   "report": {
     "title": "Vendor Analysis Report",
@@ -216,22 +187,60 @@
     "sidebarCleanDesc": "File with no harmful behaviour and contains no known threats",
     "sidebarUndetectedDesc": "Undetected by vendors supporting signature-based detection",
     "sidebarScanAnother": "Scan Another File",
-    "sidebarBack": "Back"
+    "sidebarBack": "Back",
+    "sortBySeverity": "Sort by: Severity",
+    "sortByName": "Sort by: Name A-Z",
+    "sortSeverityShort": "Severity First",
+    "sortNameShort": "Name A-Z",
+    "noVendorData": "No scanner data available.",
+    "colEngine": "Engine",
+    "colResult": "Result",
+    "colStatus": "Status",
+    "engineCount": "{{count}} engines",
+    "copySha256": "Copy SHA-256",
+    "backToResult": "Back to Result",
+    "nameOrUrl": "Name / URL",
+    "size": "Size",
+    "type": "Type",
+    "scanResult": "Scan Result",
+    "notFoundTitle": "Report Not Found",
+    "backToSummary": "Back to Verdict Summary",
+    "status": {
+      "detected": "Detected",
+      "noThreat": "No Threat",
+      "undetected": "Undetected"
+    },
+    "noVendorsMatch": "No vendors match the filter or keyword."
   },
   "analytics": {
-    "title": "Analytics & Statistics",
+    "title": "Security Analytics Deep Dive",
     "range7d": "7 Days",
     "range30d": "30 Days",
     "range90d": "90 Days",
-    "totalScans": "Total Scans",
-    "dangerScans": "Danger Verdicts",
-    "warningScans": "Warning Verdicts",
-    "cleanScans": "Clean Verdicts",
-    "notFoundScans": "Not Found",
-    "pendingScans": "Pending",
-    "failedScans": "Failed",
-    "donutTitle": "Scan Verdict Distribution",
-    "lineTitle": "Daily Scan Activity",
+    "pastRange": "Past {{range}}",
+    "totalLabel": "{{count}} total scans",
+    "colTimestamp": "Timestamp",
+    "colItem": "Scanned Item",
+    "colType": "Type",
+    "colStatus": "Status",
+    "type": {
+      "file": "File",
+      "url": "URL",
+      "hash": "Hash Search"
+    },
+    "slice": {
+      "danger": "Danger",
+      "warning": "Warning",
+      "clean": "Clean",
+      "undetected": "Undetected",
+      "notFound": "Not Found",
+      "pending": "Pending",
+      "failed": "Failed",
+      "cancelled": "Cancelled"
+    },
+    "series": {
+      "total": "Total"
+    },
     "recentActivity": "Recent Activity Log",
     "noData": "No scan data available for this timeframe."
   },
@@ -252,15 +261,13 @@
     "allStatus": "All statuses",
     "totalScans": "{{total}} scans",
     "viewAnalytics": "View All Analytics",
-    "pageInfo": "Page {{page}} of {{totalPages}} ({{total}} scans)"
+    "pageInfo": "Page {{page}} of {{totalPages}} ({{total}} scans)",
+    "typeHash": "Hash",
+    "unknown": "Unknown"
   },
   "preferences": {
     "title": "General",
     "subtitle": "Manage your date & time display, scan preferences, language, and scan history.",
-    "tabGeneral": "General",
-    "userSettings": "User Profile",
-    "updateEmail": "Update Email",
-    "updatePassword": "Change Password",
     "dateTime": "Date & Time",
     "timezone": "Time Zone",
     "dateFormatAuto": "Date format follows your selected language/region automatically.",
@@ -289,10 +296,7 @@
     "clearHistory": "Clear All History",
     "historyCleared": "All history has been deleted",
     "clearHistoryWarning": "This action is permanent and will delete all scan data stored for this session.",
-    "clearHistoryConfirm": "Type DELETE to confirm clearing all history",
     "deletePermanently": "Delete Permanently",
-    "dangerZone": "Danger Zone",
-    "deleteAccount": "Delete Account",
     "dangerThreshold": "Danger Threshold (T)",
     "dangerThresholdHelp": "Minimum number of malicious engine detections required for Danger verdict (1–10). Default: 3.",
     "showWarningToggle": "Show privacy confirmation dialog before uploading",
@@ -314,26 +318,22 @@
     "saveFailed": "Could not save your changes. Please try again.",
     "exported": "History exported",
     "exportFailed": "Could not export history",
-    "clearFailed": "Could not clear history"
+    "clearFailed": "Could not clear history",
+    "hashPlaceholder": "xxxx...xxxx (64 hex characters)"
   },
-  "profile": {
-    "title": "My Profile",
-    "subtitle": "Manage your personal information and account details.",
-    "editTitle": "Edit Profile",
-    "editDesc": "Update your display name and username. Your username must be unique.",
-    "fullName": "Full Name",
-    "username": "Username",
-    "email": "Email",
-    "emailLocked": "Email cannot be changed here.",
-    "usernameAvailable": "Username is available",
-    "usernameTaken": "Username is already taken",
-    "usernameChecking": "Checking availability...",
-    "save": "Save Changes",
-    "saved": "Profile updated successfully.",
-    "memberSince": "Member since",
-    "accountId": "Account ID",
-    "signOut": "Sign Out",
-    "signOutDesc": "Sign out of your Cyber Claw account on this device.",
-    "initialsHint": "Your avatar is generated from your name initials."
+  "notFound": {
+    "title": "Page Not Found",
+    "description": "The link you followed may be broken, have been moved, or is no longer available."
+  },
+  "terms": {
+    "englishOnly": "The legal text below is provided in English only, as it is the binding version of this document."
+  },
+  "scanner": {
+    "urlErrPrivate": "Local or private addresses cannot be scanned.",
+    "urlErrHost": "The target domain must have a valid host.",
+    "urlErrFormat": "Invalid URL format."
+  },
+  "nav": {
+    "navigation": "Navigation"
   }
 }

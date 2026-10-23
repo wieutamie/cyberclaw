@@ -1,15 +1,11 @@
 {
   "common": {
-    "appName": "Cyber Claw",
     "tagline": "Scan. Detect. Stay Safe.",
     "dashboard": "Dashboard",
     "analytics": "Analytics",
     "preferences": "Preferences",
     "about": "Tentang",
     "help": "Dokumentasi",
-    "signOut": "Sign Out",
-    "signIn": "Sign In",
-    "signUp": "Sign Up",
     "loading": "Memuat...",
     "save": "Simpan",
     "saved": "Berhasil disimpan",
@@ -17,16 +13,15 @@
     "cancel": "Batal",
     "continue": "Lanjutkan",
     "copied": "Disalin ke clipboard",
-    "copy": "Salin",
     "rescan": "Scan Ulang",
     "poweredBy": "Didukung oleh VirusTotal",
     "back": "Kembali",
-    "viewReport": "Lihat Laporan Lengkap",
     "scanAnother": "Scan Lainnya",
     "backToDashboard": "Kembali ke Dashboard",
     "noDataPeriod": "Belum ada data untuk periode ini",
     "securityVendors": "{{count}} Vendor Keamanan",
-    "error": "Terjadi kesalahan"
+    "homeAria": "Cyber Claw — Dasbor",
+    "toggleMenuAria": "Buka/Tutup Menu Navigasi"
   },
   "about": {
     "title": "Tentang Cyber Claw",
@@ -63,10 +58,8 @@
     "org": "PT Infinite Learning Indonesia",
     "licenseLabel": "Lisensi",
     "licenseValue": "MIT",
-    "repoLabel": "Kode Sumber",
     "repoUrl": "github.com/wieutamie/cyberclaw",
-    "back": "Kembali ke Dashboard",
-    "helpLink": "Buka Bantuan & Dokumen"
+    "back": "Kembali ke Dashboard"
   },
   "help": {
     "title": "Dokumentasi",
@@ -101,29 +94,9 @@
     "aboutLink": "Kembali ke Tentang"
   },
   "auth": {
-    "welcomeBack": "Selamat Datang Kembali",
-    "signInSubtitle": "Masuk ke akun Cyber Claw Anda untuk melanjutkan.",
-    "createAccount": "Buat Akun Baru",
-    "signUpSubtitle": "Mulai deteksi keamanan file, URL, dan hash Anda.",
-    "fullName": "Nama Lengkap",
     "username": "Username",
     "email": "Email",
-    "password": "Password",
-    "newPassword": "Password Baru",
-    "confirmPassword": "Konfirmasi Password",
-    "rememberMe": "Ingat Saya (30 hari)",
-    "forgotPassword": "Lupa Password?",
-    "dontHaveAccount": "Belum punya akun? Daftar",
-    "alreadyHaveAccount": "Sudah punya akun? Masuk",
-    "agreeTerms": "Saya menyetujui Ketentuan Layanan & Privasi",
-    "termsLink": "Ketentuan Layanan",
-    "continueGoogle": "Lanjutkan dengan Google",
-    "continueGithub": "Lanjutkan dengan GitHub",
-    "resetPasswordTitle": "Reset Password",
-    "resetPasswordDesc": "Masukkan email Anda untuk menerima tautan pemulihan kata sandi.",
-    "sendResetLink": "Kirim Tautan Reset",
-    "resetSent": "Jika email terdaftar, tautan reset telah dikirim.",
-    "passwordRequirements": "Minimal 8 karakter, 1 huruf besar, 1 huruf kecil, 1 angka."
+    "password": "Password"
   },
   "dashboard": {
     "heroTitle": "Pemindaian cerdas dengan\nintegrasi VirusTotal",
@@ -136,7 +109,6 @@
     "tabHistory": "Riwayat",
     "dropzoneIdle": "Drag & drop file di sini atau",
     "chooseFile": "Pilih File",
-    "maxSize": "Ukuran file maksimum: 4 MB",
     "scanNow": "SCAN NOW",
     "privacyModalTitle": "Pemberitahuan Privasi Unggahan",
     "privacyModalDesc": "File yang dipindai akan dikirim ke VirusTotal dan dapat diakses oleh komunitas keamanan VirusTotal global. Jangan mengunggah dokumen yang memuat data pribadi rahasia.",
@@ -146,7 +118,8 @@
     "urlHelp": "Masukkan URL lengkap termasuk http:// atau https://. Contoh: https://example.com",
     "hashLabel": "Hash Target",
     "hashPlaceholder": "Masukkan hash MD5, SHA-1, atau SHA-256",
-    "hashHelp": "MD5 = 32 karakter, SHA-1 = 40 karakter, SHA-256 = 64 karakter (heksadesimal)"
+    "hashHelp": "MD5 = 32 karakter, SHA-1 = 40 karakter, SHA-256 = 64 karakter (heksadesimal)",
+    "scanModeAria": "Mode pemindaian"
   },
   "scan": {
     "scanningTitle": "Scanning",
@@ -173,8 +146,6 @@
     "timeout": "Timeout",
     "failure": "Gagal",
     "unsupported": "Tidak Didukung",
-    "breakdownTitle": "Rincian Deteksi",
-    "detectionRatio": "Rasio Deteksi",
     "detectedLabel": "Terdeteksi",
     "respondingEnginesNote": "{{flagged}} dari {{total}} engine yang menjawab menandai item ini",
     "respondingEnginesLabel": "dari {{total}} Engine",
@@ -190,8 +161,8 @@
     "scanFailedTitle": "Pemindaian Gagal",
     "scanFailedDesc": "Pemindaian tidak dapat diselesaikan karena layanan pemindaian mengembalikan error. Tidak ada hasil yang dibuat-buat. Silakan coba lagi.",
     "retryScan": "Coba Lagi",
-    "notConfiguredTitle": "Layanan pemindaian belum dikonfigurasi",
-    "notConfiguredDesc": "Server belum memiliki API key VirusTotal. Pemindaian tidak tersedia sampai administrator mengatur SYSTEM_VT_API_KEY."
+    "notFoundTitle": "Pemindaian Tidak Ditemukan",
+    "notFoundBody": "Data pemindaian tidak tersedia."
   },
   "report": {
     "title": "Laporan Analisis Vendor",
@@ -216,22 +187,60 @@
     "sidebarCleanDesc": "File tidak menunjukkan perilaku berbahaya dan bebas ancaman dikenal",
     "sidebarUndetectedDesc": "Tidak terdeteksi oleh vendor yang memakai deteksi berbasis signature",
     "sidebarScanAnother": "Scan File Lain",
-    "sidebarBack": "Kembali"
+    "sidebarBack": "Kembali",
+    "sortBySeverity": "Urutkan: Tingkat Bahaya",
+    "sortByName": "Urutkan: Nama A-Z",
+    "sortSeverityShort": "Bahaya Dulu",
+    "sortNameShort": "Nama A-Z",
+    "noVendorData": "Tidak ada data scanner.",
+    "colEngine": "Engine",
+    "colResult": "Hasil",
+    "colStatus": "Status",
+    "engineCount": "{{count}} engine",
+    "copySha256": "Salin SHA-256",
+    "backToResult": "Kembali ke Hasil",
+    "nameOrUrl": "Nama / URL",
+    "size": "Ukuran",
+    "type": "Tipe",
+    "scanResult": "Hasil Pemindaian",
+    "notFoundTitle": "Laporan Tidak Ditemukan",
+    "backToSummary": "Kembali ke Ringkasan",
+    "status": {
+      "detected": "Terdeteksi",
+      "noThreat": "Tidak Berbahaya",
+      "undetected": "Belum Terdeteksi"
+    },
+    "noVendorsMatch": "Tidak ada vendor yang cocok dengan filter atau kata kunci."
   },
   "analytics": {
-    "title": "Statistik & Analitik",
+    "title": "Security Analytics Deep Dive",
     "range7d": "7 Hari",
     "range30d": "30 Hari",
     "range90d": "90 Hari",
-    "totalScans": "Total Pemindaian",
-    "dangerScans": "Terdeteksi Danger",
-    "warningScans": "Terdeteksi Warning",
-    "cleanScans": "Terdeteksi Clean",
-    "notFoundScans": "Tidak Ditemukan",
-    "pendingScans": "Menunggu",
-    "failedScans": "Gagal",
-    "donutTitle": "Distribusi Status Scan",
-    "lineTitle": "Tren Pemindaian Harian",
+    "pastRange": "{{range}} Terakhir",
+    "totalLabel": "{{count}} total pemindaian",
+    "colTimestamp": "Waktu",
+    "colItem": "Item Dipindai",
+    "colType": "Tipe",
+    "colStatus": "Status",
+    "type": {
+      "file": "Berkas",
+      "url": "URL",
+      "hash": "Pencarian Hash"
+    },
+    "slice": {
+      "danger": "Bahaya",
+      "warning": "Peringatan",
+      "clean": "Aman",
+      "undetected": "Belum Terdeteksi",
+      "notFound": "Tidak Ditemukan",
+      "pending": "Menunggu",
+      "failed": "Gagal",
+      "cancelled": "Dibatalkan"
+    },
+    "series": {
+      "total": "Total"
+    },
     "recentActivity": "Aktivitas Terkini",
     "noData": "Belum ada data untuk periode ini."
   },
@@ -252,15 +261,13 @@
     "allStatus": "Semua status",
     "totalScans": "{{total}} scan",
     "viewAnalytics": "Lihat Semua Analitik",
-    "pageInfo": "Halaman {{page}} dari {{totalPages}} ({{total}} scan)"
+    "pageInfo": "Halaman {{page}} dari {{totalPages}} ({{total}} scan)",
+    "typeHash": "Hash",
+    "unknown": "Tidak Diketahui"
   },
   "preferences": {
     "title": "Umum",
     "subtitle": "Kelola tampilan tanggal & waktu, preferensi pemindaian, bahasa, dan riwayat pemindaian Anda.",
-    "tabGeneral": "Umum",
-    "userSettings": "Profil Pengguna",
-    "updateEmail": "Perbarui Email",
-    "updatePassword": "Ubah Password",
     "dateTime": "Tanggal & Waktu",
     "timezone": "Zona Waktu",
     "dateFormatAuto": "Format tanggal otomatis mengikuti bahasa/wilayah yang dipilih.",
@@ -289,10 +296,7 @@
     "clearHistory": "Hapus Semua Riwayat",
     "historyCleared": "Semua riwayat telah dihapus",
     "clearHistoryWarning": "Tindakan ini permanen dan akan menghapus semua data pemindaian pada sesi ini.",
-    "clearHistoryConfirm": "Ketik DELETE untuk menghapus seluruh riwayat",
     "deletePermanently": "Hapus Permanen",
-    "dangerZone": "Zona Bahaya",
-    "deleteAccount": "Hapus Akun",
     "dangerThreshold": "Ambang Batas Danger (T)",
     "dangerThresholdHelp": "Jumlah minimal engine malicious sebelum berstatus Danger (1–10). Default: 3.",
     "showWarningToggle": "Tampilkan dialog konfirmasi privasi sebelum unggah",
@@ -314,26 +318,22 @@
     "saveFailed": "Gagal menyimpan perubahan. Coba lagi.",
     "exported": "Riwayat berhasil diekspor",
     "exportFailed": "Gagal mengekspor riwayat",
-    "clearFailed": "Gagal menghapus riwayat"
+    "clearFailed": "Gagal menghapus riwayat",
+    "hashPlaceholder": "xxxx...xxxx (64 karakter hex)"
   },
-  "profile": {
-    "title": "Profil Saya",
-    "subtitle": "Kelola informasi pribadi dan detail akun Anda.",
-    "editTitle": "Ubah Profil",
-    "editDesc": "Perbarui nama tampilan dan username Anda. Username harus unik.",
-    "fullName": "Nama Lengkap",
-    "username": "Username",
-    "email": "Email",
-    "emailLocked": "Email tidak dapat diubah di sini.",
-    "usernameAvailable": "Username tersedia",
-    "usernameTaken": "Username sudah digunakan",
-    "usernameChecking": "Memeriksa ketersediaan...",
-    "save": "Simpan Perubahan",
-    "saved": "Profil berhasil diperbarui.",
-    "memberSince": "Bergabung sejak",
-    "accountId": "ID Akun",
-    "signOut": "Keluar",
-    "signOutDesc": "Keluar dari akun Cyber Claw Anda di perangkat ini.",
-    "initialsHint": "Avatar Anda dibuat dari inisial nama."
+  "notFound": {
+    "title": "Halaman Tidak Ditemukan",
+    "description": "Tautan yang Anda buka mungkin rusak, telah dipindahkan, atau tidak lagi tersedia."
+  },
+  "terms": {
+    "englishOnly": "Teks hukum di bawah ini hanya tersedia dalam Bahasa Inggris, karena versi itulah yang mengikat secara hukum."
+  },
+  "scanner": {
+    "urlErrPrivate": "Alamat lokal atau privat tidak dapat dipindai.",
+    "urlErrHost": "Domain target harus memiliki host yang valid.",
+    "urlErrFormat": "Format URL tidak valid."
+  },
+  "nav": {
+    "navigation": "Navigasi"
   }
 }

@@ -123,21 +123,21 @@ export const HistoryTable: React.FC = () => {
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30">
             <FileText className="w-3.5 h-3.5" />
-            <span>File</span>
+            <span>{t('analytics.type.file')}</span>
           </span>
         );
       case 'url':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-purple-500/15 text-purple-400 border border-purple-500/30">
             <Globe className="w-3.5 h-3.5" />
-            <span>URL</span>
+            <span>{t('analytics.type.url')}</span>
           </span>
         );
       case 'hash':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">
             <Hash className="w-3.5 h-3.5" />
-            <span>Hash</span>
+            <span>{t('history.typeHash')}</span>
           </span>
         );
     }
@@ -148,7 +148,7 @@ export const HistoryTable: React.FC = () => {
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-muted/20 text-muted border border-muted/40">
           <HelpCircle className="w-3.5 h-3.5" />
-          <span>Not Found</span>
+          <span>{t('analytics.slice.notFound')}</span>
         </span>
       );
     }
@@ -167,27 +167,27 @@ export const HistoryTable: React.FC = () => {
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-status-danger text-white shadow-sm">
             <ShieldAlert className="w-3.5 h-3.5" />
-            <span>Danger</span>
+            <span>{t('analytics.slice.danger')}</span>
           </span>
         );
       case 'warning':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-status-warning text-white shadow-sm">
             <AlertTriangle className="w-3.5 h-3.5" />
-            <span>Warning</span>
+            <span>{t('analytics.slice.warning')}</span>
           </span>
         );
       case 'clean':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-surface-alt text-gray-200">
             <ShieldCheck className="w-3.5 h-3.5 text-gray-200" />
-            <span>Clean</span>
+            <span>{t('analytics.slice.clean')}</span>
           </span>
         );
       default:
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-muted/20 text-muted">
-            <span>Unknown</span>
+            <span>{t('history.unknown')}</span>
           </span>
         );
     }
@@ -255,9 +255,9 @@ export const HistoryTable: React.FC = () => {
             className="px-3.5 py-2.5 rounded-btn bg-surface-alt border border-surface-alt text-xs text-white focus:border-brand-accent focus:outline-none"
           >
             <option value="">{t('history.allTypes')}</option>
-            <option value="file">File</option>
-            <option value="url">URL</option>
-            <option value="hash">Hash</option>
+            <option value="file">{t('analytics.type.file')}</option>
+            <option value="url">{t('analytics.type.url')}</option>
+            <option value="hash">{t('history.typeHash')}</option>
           </select>
 
           <select
@@ -269,9 +269,9 @@ export const HistoryTable: React.FC = () => {
             className="px-3.5 py-2.5 rounded-btn bg-surface-alt border border-surface-alt text-xs text-white focus:border-brand-accent focus:outline-none"
           >
             <option value="">{t('history.allStatus')}</option>
-            <option value="danger">Danger</option>
-            <option value="warning">Warning</option>
-            <option value="clean">Clean</option>
+            <option value="danger">{t('analytics.slice.danger')}</option>
+            <option value="warning">{t('analytics.slice.warning')}</option>
+            <option value="clean">{t('analytics.slice.clean')}</option>
           </select>
         </div>
       </div>

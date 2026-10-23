@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { VendorResult, VendorCategory } from '../../types/index.js';
 
 interface VendorReportListProps {
@@ -8,8 +9,8 @@ interface VendorReportListProps {
 interface RowStyle {
   /** Colour applied to the engine's raw result text. */
   resultColor: string;
-  /** Plain-language status word shown in the right-hand column. */
-  statusLabel: string;
+  /** i18n key for the plain-language status word in the right-hand column. */
+  statusKey: string;
   /** Colour applied to the status word. */
   statusColor: string;
 }
@@ -23,42 +24,42 @@ interface RowStyle {
 const CATEGORY_STYLE: Record<string, RowStyle> = {
   malicious: {
     resultColor: 'text-status-danger',
-    statusLabel: 'Detected',
+    statusKey: 'report.status.detected',
     statusColor: 'text-status-danger',
   },
   suspicious: {
     resultColor: 'text-status-warning',
-    statusLabel: 'Detected',
+    statusKey: 'report.status.detected',
     statusColor: 'text-status-warning',
   },
   harmless: {
     resultColor: 'text-status-clean',
-    statusLabel: 'No Threat',
+    statusKey: 'report.status.noThreat',
     statusColor: 'text-status-clean',
   },
   undetected: {
     resultColor: 'text-status-clean',
-    statusLabel: 'No Threat',
+    statusKey: 'report.status.noThreat',
     statusColor: 'text-status-clean',
   },
   timeout: {
     resultColor: 'text-muted',
-    statusLabel: 'Undetected',
+    statusKey: 'report.status.undetected',
     statusColor: 'text-muted',
   },
   'confirmed-timeout': {
     resultColor: 'text-status-warning',
-    statusLabel: 'Detected',
+    statusKey: 'report.status.detected',
     statusColor: 'text-status-warning',
   },
   failure: {
     resultColor: 'text-muted',
-    statusLabel: 'Undetected',
+    statusKey: 'report.status.undetected',
     statusColor: 'text-muted',
   },
   'type-unsupported': {
     resultColor: 'text-muted',
-    statusLabel: 'Undetected',
+    statusKey: 'report.status.undetected',
     statusColor: 'text-muted',
   },
 };
@@ -74,6 +75,7 @@ const styleFor = (category: VendorCategory): RowStyle =>
  * just like the reference.
  */
 export const VendorReportList: React.FC<VendorReportListProps> = ({ vendors }) => {
+  const { t } = useTranslation();
   // Keep the vendor list alphabetical, matching the mockup ordering.
   const ordered = useMemo(
     () =>
@@ -95,7 +97,7 @@ export const VendorReportList: React.FC<VendorReportListProps> = ({ vendors }) =
   if (ordered.length === 0) {
     return (
       <p className="text-sm text-white/70 text-center py-10">
-        Tidak ada data scanner.
+        {t('report.noVendorData')}
       </p>
     );
   }
@@ -105,12 +107,12 @@ export const VendorReportList: React.FC<VendorReportListProps> = ({ vendors }) =
       {/* Column legend — keeps the three-column scan readable at a glance. */}
       <div className="flex items-center justify-between gap-3 border-b border-surface-alt pb-3">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] font-bold uppercase tracking-wider text-muted">
-          <span>Engine</span>
-          <span>Result</span>
-          <span>Status</span>
+          <span>{t('report.colEngine')}</span>
+          <span>{t('report.colResult')}</span>
+          <span>{t('report.colStatus')}</span>
         </div>
         <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">
-          {ordered.length} engines
+          {t('report.engineCount', { count: ordered.length })}
         </span>
       </div>
 
@@ -141,7 +143,7 @@ export const VendorReportList: React.FC<VendorReportListProps> = ({ vendors }) =
                 <span
                   className={`text-[12px] font-semibold whitespace-nowrap text-right min-w-[80px] ${style.statusColor}`}
                 >
-                  {style.statusLabel}
+                  {t(style.statusKey)}
                 </span>
               </div>
             );

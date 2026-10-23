@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Menu } from 'lucide-react';
 import { HamburgerMenu } from './HamburgerMenu.js';
 import { BrandLogo } from './BrandLogo.js';
 
 export const Header: React.FC = () => {
+  const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -19,7 +21,7 @@ export const Header: React.FC = () => {
         <Link
           to="/dashboard"
           className="group flex items-center min-w-0 rounded-xl px-1.5 py-1 -ml-1.5 transition-transform duration-200 hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-          aria-label="Cyber Claw — Dashboard"
+          aria-label={t('common.homeAria')}
         >
           <BrandLogo
             stacked
@@ -43,7 +45,7 @@ export const Header: React.FC = () => {
               aria-expanded={menuOpen}
               aria-controls="app-nav-menu"
               aria-haspopup="menu"
-              aria-label="Toggle Navigation Menu"
+              aria-label={t('common.toggleMenuAria')}
               className={`w-11 h-11 rounded-xl flex items-center justify-center text-white transition-all duration-200 hover:scale-105 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-white ${
                 menuOpen ? 'bg-black/30 rotate-90' : 'hover:bg-black/20'
               }`}

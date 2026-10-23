@@ -1,7 +1,7 @@
 import { supabase, memoryStore } from "../lib/supabase.js";
 import { ScanRecord } from "../types/index.js";
 import { SettingsService } from "./settings.service.js";
-import { classifyScan, ScanBucket } from "../lib/analyticsBuckets.js";
+import { classifyScan, ScanBucket, toDonutSlices } from "../lib/analyticsBuckets.js";
 
 export interface AnalyticsResponse {
   kpi: {
@@ -14,9 +14,14 @@ export interface AnalyticsResponse {
     pending: number;
   };
   donut: {
+    /** Stable i18n key suffix: danger | warning | clean | undetected. */
+    key: 'danger' | 'warning' | 'clean' | 'undetected';
+    /** English fallback label (non-i18n API consumers). */
     name: string;
     value: number;
     color: string;
+    /** Only populated for the merged `undetected` slice. */
+    breakdown: null | { notFound: number; pending: number; failed: number };
   }[];
   daily: {
     date: string;
@@ -181,14 +186,16 @@ export class AnalyticsService {
       ...counts,
     }));
 
-    const donut = [
-      { name: "Danger", value: buckets.danger, color: "#FF0000" },
-      { name: "Warning", value: buckets.warning, color: "#FF7300" },
-      { name: "Clean", value: buckets.clean, color: "#11FF00" },
-      { name: "Not Found", value: buckets.notFound, color: "#64748B" },
-      { name: "Pending", value: buckets.pending, color: "#38BDF8" },
-      { name: "Failed", value: buckets.failed, color: "#7F1D1D" },
-    ];
+    // The donut follows the UI mockup: four slices only. The three
+    // "no verdict yet" buckets (notFound / pending / failed) are merged into
+    // a single `undetected` slice, which is what the mockup legend shows.
+    // `name` stays as an English fallback for non-i18n consumers and API
+    // clients; the client renders `t('analytics.slice.' + key)` instead.
+    // `breakdown` keeps the individual counts so the tooltip can still expose
+    // exactly how the merged slice was composed (no data is lost).
+    // `toDonutSlices` is the single source of truth for this mapping and is
+    // unit-tested against the "slices sum === total" invariant.
+    const donut = toDonutSlices(buckets);
 
     const totalScans = allUserScans.length;
 

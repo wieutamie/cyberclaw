@@ -693,7 +693,7 @@ const VtApiKeySection: React.FC<VtApiKeySectionProps> = ({
           type={show ? 'text' : 'password'}
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
-          placeholder="xxxx…xxxx (64 karakter hex)"
+          placeholder={t('preferences.hashPlaceholder')}
           className="w-full px-3.5 py-2.5 pr-10 rounded-btn bg-surface-alt border border-surface-alt text-white text-sm font-mono focus:border-brand-accent focus:outline-none"
         />
         <button

@@ -24,6 +24,8 @@ interface DailyData {
 
 interface ScansLineProps {
   data: DailyData[];
+  /** Caption rendered under the X axis, e.g. "Past 7 Days". */
+  caption?: string;
 }
 
 /** Parse a YYYY-MM-DD day key into a *local* Date (avoids the UTC-midnight shift). */
@@ -32,7 +34,7 @@ function parseDayKey(key: string): Date {
   return new Date(y, m - 1, d);
 }
 
-export const ScansLine: React.FC<ScansLineProps> = ({ data }) => {
+export const ScansLine: React.FC<ScansLineProps> = ({ data, caption }) => {
   const { t, i18n } = useTranslation();
   const locale = (i18n.language || "en").split("-")[0];
 
@@ -62,8 +64,9 @@ export const ScansLine: React.FC<ScansLineProps> = ({ data }) => {
   }));
 
   return (
-    <div className="w-full h-64">
-      <ResponsiveContainer width="100%" height="100%">
+    <div className="w-full flex flex-col">
+      <div className="w-full h-64">
+        <ResponsiveContainer width="100%" height="100%">
         <LineChart data={formattedData} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#412431" />
           <XAxis
@@ -93,22 +96,22 @@ export const ScansLine: React.FC<ScansLineProps> = ({ data }) => {
                       {fullFmt ? fullFmt.format(parseDayKey(fullItem.date)) : fullItem.date}
                     </span>
                     <span className="text-white">
-                      Total: <strong className="font-mono">{fullItem.total}</strong>
+                      {t('analytics.series.total')}: <strong className="font-mono">{fullItem.total}</strong>
                     </span>
                     <span className="text-status-danger">
-                      Danger: <strong className="font-mono">{fullItem.danger}</strong>
+                      {t('analytics.slice.danger')}: <strong className="font-mono">{fullItem.danger}</strong>
                     </span>
                     <span className="text-status-warning">
-                      Warning: <strong className="font-mono">{fullItem.warning}</strong>
+                      {t('analytics.slice.warning')}: <strong className="font-mono">{fullItem.warning}</strong>
                     </span>
                     <span className="text-status-clean">
-                      Clean: <strong className="font-mono">{fullItem.clean}</strong>
+                      {t('analytics.slice.clean')}: <strong className="font-mono">{fullItem.clean}</strong>
                     </span>
                     <span className="text-[#38BDF8]">
-                      Pending: <strong className="font-mono">{fullItem.pending ?? 0}</strong>
+                      {t('analytics.slice.pending')}: <strong className="font-mono">{fullItem.pending ?? 0}</strong>
                     </span>
                     <span className="text-[#B91C1C]">
-                      Failed: <strong className="font-mono">{fullItem.failed ?? 0}</strong>
+                      {t('analytics.slice.failed')}: <strong className="font-mono">{fullItem.failed ?? 0}</strong>
                     </span>
                   </div>
                 );
@@ -123,7 +126,7 @@ export const ScansLine: React.FC<ScansLineProps> = ({ data }) => {
           <Line
             type="monotone"
             dataKey="total"
-            name="Total"
+            name={t('analytics.series.total')}
             stroke="#FF0090"
             strokeWidth={2.5}
             dot={{ r: 3, fill: "#FF0090" }}
@@ -132,7 +135,7 @@ export const ScansLine: React.FC<ScansLineProps> = ({ data }) => {
           <Line
             type="monotone"
             dataKey="danger"
-            name="Danger"
+            name={t('analytics.slice.danger')}
             stroke="#FF0000"
             strokeWidth={1.5}
             dot={false}
@@ -140,7 +143,7 @@ export const ScansLine: React.FC<ScansLineProps> = ({ data }) => {
           <Line
             type="monotone"
             dataKey="warning"
-            name="Warning"
+            name={t('analytics.slice.warning')}
             stroke="#FF7300"
             strokeWidth={1.5}
             dot={false}
@@ -148,7 +151,7 @@ export const ScansLine: React.FC<ScansLineProps> = ({ data }) => {
           <Line
             type="monotone"
             dataKey="clean"
-            name="Clean"
+            name={t('analytics.slice.clean')}
             stroke="#11FF00"
             strokeWidth={1.5}
             dot={false}
@@ -156,7 +159,7 @@ export const ScansLine: React.FC<ScansLineProps> = ({ data }) => {
           <Line
             type="monotone"
             dataKey="pending"
-            name="Pending"
+            name={t('analytics.slice.pending')}
             stroke="#38BDF8"
             strokeWidth={1.5}
             strokeDasharray="4 3"
@@ -165,14 +168,18 @@ export const ScansLine: React.FC<ScansLineProps> = ({ data }) => {
           <Line
             type="monotone"
             dataKey="failed"
-            name="Failed"
+            name={t('analytics.slice.failed')}
             stroke="#B91C1C"
             strokeWidth={1.5}
             strokeDasharray="4 3"
             dot={false}
           />
         </LineChart>
-      </ResponsiveContainer>
+        </ResponsiveContainer>
+      </div>
+      {caption && (
+        <p className="text-center text-xs font-extrabold text-white mt-1">{caption}</p>
+      )}
     </div>
   );
 };

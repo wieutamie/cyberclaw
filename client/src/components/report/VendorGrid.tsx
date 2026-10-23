@@ -110,17 +110,17 @@ export const VendorGrid: React.FC<VendorGridProps> = ({ vendors }) => {
             type="button"
             onClick={() => setSortBy((s) => (s === 'severity' ? 'name' : 'severity'))}
             className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-btn bg-surface border border-surface-alt text-xs font-semibold text-gray-300 hover:bg-surface-alt transition-colors shrink-0"
-            title={sortBy === 'severity' ? 'Urutkan: Tingkat Bahaya' : 'Urutkan: Nama A-Z'}
+            title={sortBy === 'severity' ? t('report.sortBySeverity') : t('report.sortByName')}
           >
             {sortBy === 'severity' ? (
               <>
                 <ArrowDownWideNarrow className="w-4 h-4" />
-                <span>Bahaya Dulu</span>
+                <span>{t('report.sortSeverityShort')}</span>
               </>
             ) : (
               <>
                 <ArrowDownAZ className="w-4 h-4" />
-                <span>Nama A-Z</span>
+                <span>{t('report.sortNameShort')}</span>
               </>
             )}
           </button>
@@ -157,7 +157,7 @@ export const VendorGrid: React.FC<VendorGridProps> = ({ vendors }) => {
       {/* Grid of Vendor Cards */}
       {filteredVendors.length === 0 ? (
         <div className="p-8 text-center bg-surface border border-surface-alt rounded-card text-muted text-sm">
-          No vendors match the filter or keyword.
+          {t('report.noVendorsMatch')}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
