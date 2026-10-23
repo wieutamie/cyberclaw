@@ -105,3 +105,56 @@ export interface AuthUser {
   username?: string;
   created_at?: string;
 }
+
+/* ─────────────────────────── Analytics ─────────────────────────── */
+
+export type AnalyticsRange = '7d' | '30d' | '90d';
+
+/** Stable i18n key suffix for the four mockup donut slices. */
+export type DonutSliceKey = 'danger' | 'warning' | 'clean' | 'undetected';
+
+/** Individual counts merged into the `undetected` slice (tooltip only). */
+export interface DonutBreakdown {
+  notFound: number;
+  pending: number;
+  failed: number;
+}
+
+export interface AnalyticsDonutSlice {
+  key: DonutSliceKey;
+  /** English fallback label for non-i18n consumers. */
+  name: string;
+  value: number;
+  color: string;
+  /** Only populated for the merged `undetected` slice. */
+  breakdown: DonutBreakdown | null;
+}
+
+export interface AnalyticsKpi {
+  totalScans: number;
+  danger: number;
+  warning: number;
+  clean: number;
+  notFound: number;
+  failed: number;
+  pending: number;
+}
+
+/** One day bucket of the line chart (YYYY-MM-DD key + six raw buckets). */
+export interface AnalyticsDailyPoint {
+  date: string;
+  total: number;
+  danger: number;
+  warning: number;
+  clean: number;
+  notFound: number;
+  pending: number;
+  failed: number;
+}
+
+export interface AnalyticsResponse {
+  kpi: AnalyticsKpi;
+  donut: AnalyticsDonutSlice[];
+  daily: AnalyticsDailyPoint[];
+  recent: ScanRecord[];
+}

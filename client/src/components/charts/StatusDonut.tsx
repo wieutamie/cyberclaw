@@ -1,26 +1,10 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-
-interface DonutBreakdown {
-  notFound: number;
-  pending: number;
-  failed: number;
-}
-
-interface DonutItem {
-  /** Stable i18n key suffix (danger | warning | clean | undetected). */
-  key?: string;
-  /** English fallback name, kept for non-i18n consumers of the API. */
-  name: string;
-  value: number;
-  color: string;
-  /** Only set for the merged `undetected` slice. */
-  breakdown?: DonutBreakdown | null;
-}
+import type { AnalyticsDonutSlice } from '../../types/index.js';
 
 interface StatusDonutProps {
-  data: DonutItem[];
+  data: AnalyticsDonutSlice[];
 }
 
 export const StatusDonut: React.FC<StatusDonutProps> = ({ data }) => {
@@ -29,19 +13,17 @@ export const StatusDonut: React.FC<StatusDonutProps> = ({ data }) => {
 
   // Server sends a stable `key`; older cached payloads may only have `name`,
   // so fall back to the lowercased name before giving up.
-  const labelFor = (item: DonutItem) => {
+  const labelFor = (item: AnalyticsDonutSlice) => {
     const key =
       item.key || (item.name ? item.name.toLowerCase().replace(/\s+/g, '') : '');
     const translated = key ? t(`analytics.slice.${key}`, { defaultValue: '' }) : '';
     return translated || item.name;
   };
 
+  // The page owns the empty state, so a zero-total donut renders just the ring
+  // frame (no second "no data" message stacked on top of the page one).
   if (total === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 text-muted text-sm">
-        {t('common.noDataPeriod')}
-      </div>
-    );
+    return <div className="w-full h-64" aria-hidden="true" />;
   }
 
   const visible = data.filter((d) => d.value > 0);
@@ -55,7 +37,7 @@ export const StatusDonut: React.FC<StatusDonutProps> = ({ data }) => {
             <Tooltip
               content={({ active, payload }) => {
                 if (active && payload && payload.length) {
-                  const d = payload[0].payload as DonutItem;
+                  const d = payload[0].payload as AnalyticsDonutSlice;
                   const pct = pctOf(d.value).toFixed(1);
                   return (
                     <div className="bg-surface-alt border border-surface px-3 py-1.5 rounded-lg shadow-lg text-xs">

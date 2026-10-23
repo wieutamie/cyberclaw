@@ -8,22 +8,13 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from "recharts";
-
-interface DailyData {
-  date: string;
-  total: number;
-  danger: number;
-  warning: number;
-  clean: number;
-  notFound: number;
-  pending: number;
-  failed: number;
-}
+import type { AnalyticsDailyPoint, AnalyticsRange } from "../../types/index.js";
 
 interface ScansLineProps {
-  data: DailyData[];
+  data: AnalyticsDailyPoint[];
+  /** Active range; 7d renders weekday names instead of MM/DD. */
+  range: AnalyticsRange;
   /** Caption rendered under the X axis, e.g. "Past 7 Days". */
   caption?: string;
 }
@@ -34,148 +25,152 @@ function parseDayKey(key: string): Date {
   return new Date(y, m - 1, d);
 }
 
-export const ScansLine: React.FC<ScansLineProps> = ({ data, caption }) => {
+/** The four series the mockup draws — one per donut slice. */
+const SERIES = [
+  { key: "danger", color: "#FF0000", labelKey: "analytics.slice.danger", dot: false },
+  { key: "warning", color: "#FF7300", labelKey: "analytics.slice.warning", dot: false },
+  { key: "clean", color: "#11FF00", labelKey: "analytics.slice.clean", dot: true },
+  { key: "undetected", color: "#64748B", labelKey: "analytics.slice.undetected", dot: false },
+] as const;
+
+export const ScansLine: React.FC<ScansLineProps> = ({ data, range, caption }) => {
   const { t, i18n } = useTranslation();
   const locale = (i18n.language || "en").split("-")[0];
 
-  // Day keys follow the active locale layout (en -> MM/DD, id -> DD/MM) so the
-  // chart stays consistent with every other timestamp in the app.
   let shortFmt: Intl.DateTimeFormat | null = null;
+  let weekdayFmt: Intl.DateTimeFormat | null = null;
   let fullFmt: Intl.DateTimeFormat | null = null;
   try {
     shortFmt = new Intl.DateTimeFormat(locale, { month: "2-digit", day: "2-digit" });
-    fullFmt = new Intl.DateTimeFormat(locale, { year: "numeric", month: "2-digit", day: "2-digit" });
+    weekdayFmt = new Intl.DateTimeFormat(locale, { weekday: "long" });
+    fullFmt = new Intl.DateTimeFormat(locale, {
+      weekday: "long",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
   } catch {
     shortFmt = null;
+    weekdayFmt = null;
     fullFmt = null;
   }
 
-  if (!data || data.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 text-muted text-sm">
-        {t('common.noDataPeriod')}
-      </div>
-    );
-  }
+  // 7 days -> weekday names ("Monday"), longer ranges -> locale day keys.
+  const axisLabel = (key: string) => {
+    const day = parseDayKey(key);
+    if (range === "7d") {
+      return weekdayFmt
+        ? weekdayFmt.format(day)
+        : ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][
+            day.getDay()
+          ];
+    }
+    return shortFmt ? shortFmt.format(day) : key.slice(5);
+  };
 
+  // Merge the three "no verdict" buckets into a single `undetected` series so
+  // the chart shows exactly the four mockup lines (danger / warning / clean /
+  // undetected) instead of six overlapping ones.
   const formattedData = data.map((d) => ({
     ...d,
-    shortDate: shortFmt ? shortFmt.format(parseDayKey(d.date)) : d.date.slice(5),
+    undetected: (d.notFound ?? 0) + (d.pending ?? 0) + (d.failed ?? 0),
+    axisLabel: axisLabel(d.date),
   }));
+
+  // The page owns the empty state, so an empty series just renders the frame.
+  if (!data || data.length === 0) {
+    return <div className="w-full h-64" aria-hidden="true" />;
+  }
 
   return (
     <div className="w-full flex flex-col">
       <div className="w-full h-64">
         <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={formattedData} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#412431" />
-          <XAxis
-            dataKey="shortDate"
-            stroke="#64748B"
-            fontSize={11}
-            tickLine={false}
-            tickMargin={8}
-            minTickGap={24}
-            interval="preserveStartEnd"
-          />
-          <YAxis
-            stroke="#64748B"
-            fontSize={11}
-            tickLine={false}
-            tickMargin={6}
-            allowDecimals={false}
-            width={36}
-          />
-          <Tooltip
-            content={({ active, payload, label }) => {
-              if (active && payload && payload.length) {
-                const fullItem = payload[0].payload as DailyData;
-                return (
-                  <div className="bg-surface border border-surface-alt p-3 rounded-lg shadow-xl text-xs flex flex-col gap-1">
-                    <span className="font-semibold text-white border-b border-surface-alt pb-1 mb-1">
-                      {fullFmt ? fullFmt.format(parseDayKey(fullItem.date)) : fullItem.date}
-                    </span>
-                    <span className="text-white">
-                      {t('analytics.series.total')}: <strong className="font-mono">{fullItem.total}</strong>
-                    </span>
-                    <span className="text-status-danger">
-                      {t('analytics.slice.danger')}: <strong className="font-mono">{fullItem.danger}</strong>
-                    </span>
-                    <span className="text-status-warning">
-                      {t('analytics.slice.warning')}: <strong className="font-mono">{fullItem.warning}</strong>
-                    </span>
-                    <span className="text-status-clean">
-                      {t('analytics.slice.clean')}: <strong className="font-mono">{fullItem.clean}</strong>
-                    </span>
-                    <span className="text-[#38BDF8]">
-                      {t('analytics.slice.pending')}: <strong className="font-mono">{fullItem.pending ?? 0}</strong>
-                    </span>
-                    <span className="text-[#B91C1C]">
-                      {t('analytics.slice.failed')}: <strong className="font-mono">{fullItem.failed ?? 0}</strong>
-                    </span>
-                  </div>
-                );
-              }
-              return null;
-            }}
-          />
-          <Legend
-            wrapperStyle={{ fontSize: "11px", paddingTop: "10px" }}
-            formatter={(value) => <span className="text-gray-300 capitalize">{value}</span>}
-          />
-          <Line
-            type="monotone"
-            dataKey="total"
-            name={t('analytics.series.total')}
-            stroke="#FF0090"
-            strokeWidth={2.5}
-            dot={{ r: 3, fill: "#FF0090" }}
-            activeDot={{ r: 5 }}
-          />
-          <Line
-            type="monotone"
-            dataKey="danger"
-            name={t('analytics.slice.danger')}
-            stroke="#FF0000"
-            strokeWidth={1.5}
-            dot={false}
-          />
-          <Line
-            type="monotone"
-            dataKey="warning"
-            name={t('analytics.slice.warning')}
-            stroke="#FF7300"
-            strokeWidth={1.5}
-            dot={false}
-          />
-          <Line
-            type="monotone"
-            dataKey="clean"
-            name={t('analytics.slice.clean')}
-            stroke="#11FF00"
-            strokeWidth={1.5}
-            dot={false}
-          />
-          <Line
-            type="monotone"
-            dataKey="pending"
-            name={t('analytics.slice.pending')}
-            stroke="#38BDF8"
-            strokeWidth={1.5}
-            strokeDasharray="4 3"
-            dot={false}
-          />
-          <Line
-            type="monotone"
-            dataKey="failed"
-            name={t('analytics.slice.failed')}
-            stroke="#B91C1C"
-            strokeWidth={1.5}
-            strokeDasharray="4 3"
-            dot={false}
-          />
-        </LineChart>
+          <LineChart data={formattedData} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#412431" />
+            <XAxis
+              dataKey="axisLabel"
+              stroke="#64748B"
+              fontSize={11}
+              tickLine={false}
+              tickMargin={8}
+              minTickGap={range === "7d" ? 0 : 24}
+              interval={range === "7d" ? 0 : "preserveStartEnd"}
+            />
+            <YAxis
+              stroke="#64748B"
+              fontSize={11}
+              tickLine={false}
+              tickMargin={6}
+              allowDecimals={false}
+              width={36}
+            />
+            <Tooltip
+              content={({ active, payload }) => {
+                if (active && payload && payload.length) {
+                  const point = payload[0].payload as AnalyticsDailyPoint & {
+                    undetected: number;
+                  };
+                  return (
+                    <div className="bg-surface border border-surface-alt p-3 rounded-lg shadow-xl text-xs flex flex-col gap-1">
+                      <span className="font-semibold text-white border-b border-surface-alt pb-1 mb-1">
+                        {fullFmt ? fullFmt.format(parseDayKey(point.date)) : point.date}
+                      </span>
+                      <span className="text-white">
+                        {t("analytics.series.total")}:{" "}
+                        <strong className="font-mono">{point.total}</strong>
+                      </span>
+                      <span className="text-status-danger">
+                        {t("analytics.slice.danger")}:{" "}
+                        <strong className="font-mono">{point.danger}</strong>
+                      </span>
+                      <span className="text-status-warning">
+                        {t("analytics.slice.warning")}:{" "}
+                        <strong className="font-mono">{point.warning}</strong>
+                      </span>
+                      <span className="text-status-clean">
+                        {t("analytics.slice.clean")}:{" "}
+                        <strong className="font-mono">{point.clean}</strong>
+                      </span>
+                      <span className="text-muted">
+                        {t("analytics.slice.undetected")}:{" "}
+                        <strong className="font-mono">{point.undetected}</strong>
+                      </span>
+                    </div>
+                  );
+                }
+                return null;
+              }}
+            />
+            {SERIES.map((s) => (
+              <Line
+                key={s.key}
+                type="monotone"
+                dataKey={s.key}
+                name={t(s.labelKey)}
+                stroke={s.color}
+                strokeWidth={s.key === "clean" ? 2.5 : 1.75}
+                dot={s.dot ? { r: 3.5, fill: s.color, strokeWidth: 0 } : false}
+                activeDot={{ r: 5, fill: s.color, strokeWidth: 0 }}
+                strokeDasharray={s.key === "undetected" ? "5 3" : undefined}
+                isAnimationActive={false}
+              />
+            ))}
+          </LineChart>
         </ResponsiveContainer>
+      </div>
+
+      {/* Compact custom legend — the four slices, in the mockup's order. */}
+      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] mt-1">
+        {SERIES.map((s) => (
+          <span key={s.key} className="flex items-center gap-1.5">
+            <span
+              className="w-2.5 h-2.5 rounded-full shrink-0"
+              style={{ backgroundColor: s.color }}
+            />
+            <span className="text-gray-300 font-semibold">{t(s.labelKey)}</span>
+          </span>
+        ))}
       </div>
       {caption && (
         <p className="text-center text-xs font-extrabold text-white mt-1">{caption}</p>

@@ -1,4 +1,11 @@
-import { ScanRecord, UserSettings, ScanType, Verdict } from '../types/index.js';
+import {
+  ScanRecord,
+  UserSettings,
+  ScanType,
+  Verdict,
+  AnalyticsRange,
+  AnalyticsResponse,
+} from '../types/index.js';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
@@ -199,8 +206,8 @@ export const api = {
   },
 
   // Analytics
-  getAnalytics: async (range: '7d' | '30d' | '90d' = '30d'): Promise<any> =>
-    request(`/analytics?range=${range}`),
+  getAnalytics: async (range: AnalyticsRange = '30d'): Promise<AnalyticsResponse> =>
+    request<AnalyticsResponse>(`/analytics?range=${range}`),
 
   // Settings
   getSettings: async (): Promise<UserSettings> => request<UserSettings>('/settings'),
