@@ -67,7 +67,7 @@ export const AnalyticsPage: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6 max-w-[1200px] mx-auto">
+    <div className="flex flex-col gap-4 max-w-[1200px] mx-auto">
       {/* Title + range filters, matching the mockup's single heading line. */}
       <div className="animate-fade-rise flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
@@ -108,9 +108,9 @@ export const AnalyticsPage: React.FC = () => {
             intentionally translucent (mockup: `bg-zinc-800/60` + soft outline)
             so the app watermark reads faintly through the card.
           */}
-          <div className="animate-fade-rise bg-surface/55 backdrop-blur-[3px] border border-white/10 rounded-card p-5 sm:p-6 shadow-card">
+          <div className="animate-fade-rise bg-surface/35 backdrop-blur-[3px] border border-white/10 rounded-card p-4 sm:p-5 shadow-card">
             {hasData ? (
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
                 <div className="lg:col-span-4 flex items-center justify-center">
                   <StatusDonut data={data?.donut || []} />
                 </div>
@@ -130,7 +130,7 @@ export const AnalyticsPage: React.FC = () => {
           </div>
 
           {/* Recent Activity Log — four columns, as in the mockup. */}
-          <div className="animate-fade-rise [animation-delay:120ms] bg-surface/55 backdrop-blur-[3px] border border-white/10 rounded-card p-5 sm:p-6 shadow-card flex flex-col gap-4 transition-shadow duration-300 hover:shadow-[0_14px_36px_rgba(0,0,0,0.4)]">
+          <div className="animate-fade-rise [animation-delay:120ms] bg-surface/55 backdrop-blur-[3px] border border-white/10 rounded-card p-4 sm:p-5 shadow-card flex flex-col gap-4 transition-shadow duration-300 hover:shadow-[0_14px_36px_rgba(0,0,0,0.4)]">
             <div className="flex items-center justify-between gap-3 pb-3 border-b border-white/10">
               <h2 className="text-lg font-bold text-white">
                 {t('analytics.recentActivity')}

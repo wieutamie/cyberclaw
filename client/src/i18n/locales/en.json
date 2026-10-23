@@ -244,7 +244,8 @@
       "total": "Total"
     },
     "recentActivity": "Recent Activity Log",
-    "noData": "No scan data available for this timeframe."
+    "noData": "No scan data available for this timeframe.",
+    "legendLabel": "Verdict legend"
   },
   "history": {
     "title": "Scan History",

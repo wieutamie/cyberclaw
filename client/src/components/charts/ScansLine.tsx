@@ -25,6 +25,11 @@ function parseDayKey(key: string): Date {
   return new Date(y, m - 1, d);
 }
 
+/** ISO weekday index: Monday = 0 ... Sunday = 6. */
+function isoWeekday(key: string): number {
+  return (parseDayKey(key).getDay() + 6) % 7;
+}
+
 /** The four series the mockup draws — one per donut slice. */
 const SERIES = [
   { key: "danger", color: "#FF0000", labelKey: "analytics.slice.danger", dot: false },
@@ -68,10 +73,17 @@ export const ScansLine: React.FC<ScansLineProps> = ({ data, range, caption }) =>
     return shortFmt ? shortFmt.format(day) : key.slice(5);
   };
 
+  // The mockup's axis always reads Monday -> Sunday, but the API returns a
+  // rolling window ending today, which may start on any weekday. Rotating the
+  // same seven points into ISO order keeps the axis tidy without changing
+  // which days are shown.
+  const ordered =
+    range === "7d" ? [...data].sort((a, b) => isoWeekday(a.date) - isoWeekday(b.date)) : data;
+
   // Merge the three "no verdict" buckets into a single `undetected` series so
   // the chart shows exactly the four mockup lines (danger / warning / clean /
   // undetected) instead of six overlapping ones.
-  const formattedData = data.map((d) => ({
+  const formattedData = ordered.map((d) => ({
     ...d,
     undetected: (d.notFound ?? 0) + (d.pending ?? 0) + (d.failed ?? 0),
     axisLabel: axisLabel(d.date),
@@ -160,20 +172,9 @@ export const ScansLine: React.FC<ScansLineProps> = ({ data, range, caption }) =>
         </ResponsiveContainer>
       </div>
 
-      {/* Compact custom legend — the four slices, in the mockup's order. */}
-      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] mt-1">
-        {SERIES.map((s) => (
-          <span key={s.key} className="flex items-center gap-1.5">
-            <span
-              className="w-2.5 h-2.5 rounded-full shrink-0"
-              style={{ backgroundColor: s.color }}
-            />
-            <span className="text-gray-300 font-semibold">{t(s.labelKey)}</span>
-          </span>
-        ))}
-      </div>
+      {/* The four colour keys live under the donut, exactly as in the mockup. */}
       {caption && (
-        <p className="text-center text-xs font-extrabold text-white mt-1">{caption}</p>
+        <p className="text-center text-xs font-extrabold text-white mt-2">{caption}</p>
       )}
     </div>
   );

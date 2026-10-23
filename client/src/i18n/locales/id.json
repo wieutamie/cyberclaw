@@ -244,7 +244,8 @@
       "total": "Total"
     },
     "recentActivity": "Aktivitas Terkini",
-    "noData": "Belum ada data untuk periode ini."
+    "noData": "Belum ada data untuk periode ini.",
+    "legendLabel": "Keterangan status"
   },
   "history": {
     "title": "Riwayat Scan",

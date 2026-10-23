@@ -31,7 +31,7 @@ export const StatusDonut: React.FC<StatusDonutProps> = ({ data }) => {
 
   return (
     <div className="flex flex-col items-center justify-center gap-3 h-full min-h-[16rem]">
-      <div className="relative w-full max-w-[15rem] aspect-square">
+      <div className="relative w-52 h-52 sm:w-56 sm:h-56 shrink-0">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Tooltip
@@ -69,15 +69,31 @@ export const StatusDonut: React.FC<StatusDonutProps> = ({ data }) => {
               data={visible}
               cx="50%"
               cy="50%"
-              innerRadius="55%"
-              outerRadius="95%"
-              paddingAngle={2}
+              innerRadius="62%"
+              outerRadius="92%"
+              paddingAngle={3}
               dataKey="value"
               labelLine={false}
-              label={({ percent, index }) => {
+              isAnimationActive={false}
+              label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
                 const item = visible[index as number];
-                if (!item || pctOf(item.value) < 6) return '';
-                return `${Math.round((percent || 0) * 100)}%`;
+                // Hide labels on slivers that would collide with the ring edge.
+                if (!item || pctOf(item.value) < 6) return null;
+                const r = (Number(innerRadius) + Number(outerRadius)) / 2;
+                const rad = -(midAngle as number) * (Math.PI / 180);
+                return (
+                  <text
+                    x={Number(cx) + r * Math.cos(rad)}
+                    y={Number(cy) + r * Math.sin(rad)}
+                    fill="#ffffff"
+                    fontSize={10}
+                    fontWeight={800}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                  >
+                    {Math.round((percent || 0) * 100)}%
+                  </text>
+                );
               }}
             >
               {visible.map((entry, index) => (
@@ -93,18 +109,25 @@ export const StatusDonut: React.FC<StatusDonutProps> = ({ data }) => {
         </ResponsiveContainer>
       </div>
 
-      {/* Legend below the ring, matching the mockup: colour dot + label. */}
-      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[11px]">
-        {visible.map((item) => (
-          <div key={labelFor(item)} className="flex items-center gap-1.5">
+      {/*
+        Legend below the ring. Iterating the full slice list (not just the
+        non-zero ones) keeps all four keys visible, as in the mockup, even when
+        a verdict has no scans yet.
+      */}
+      <ul
+        aria-label={t("analytics.legendLabel")}
+        className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[11px]"
+      >
+        {data.map((item) => (
+          <li key={item.key || item.name} className="flex items-center gap-1.5">
             <span
               className="w-2.5 h-2.5 rounded-full shrink-0"
               style={{ backgroundColor: item.color }}
             />
             <span className="text-gray-300 font-semibold">{labelFor(item)}</span>
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 };
